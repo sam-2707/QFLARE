@@ -1,0 +1,16 @@
+version: '3.8'
+services:
+  server:
+    build: ./server
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./server:/app/server
+    command: uvicorn server.main:app --host 0.0.0.0 --port 8000
+  edge_node:
+    build: ./edge_node
+    depends_on:
+      - server
+    volumes:
+      - ./edge_node:/app/edge_node
+    command: python edge_node/main.py

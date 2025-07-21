@@ -1,0 +1,3 @@
+device_id: "edge-node-01"
+location: "zone-a"
+quantum_key_provider: "mock_qkd_api"

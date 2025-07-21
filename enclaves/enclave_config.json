@@ -1,0 +1,5 @@
+{
+  "enclave_name": "QFLAREEnclave",
+  "version": "0.1",
+  "description": "Stub config for secure enclave."
+}
