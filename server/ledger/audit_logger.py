@@ -1,7 +1,9 @@
 # audit_logger.py
 """
-Stub for audit logging logic.
+Simple audit logging logic for demo purposes.
 """
+audit_log = []
+
 def log_audit_event(event):
-    # TODO: Implement audit logging
-    pass
+    audit_log.append(event)
+    print(f"[AUDIT] {event}")
