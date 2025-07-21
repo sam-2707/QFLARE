@@ -4,4 +4,3 @@ requests
 numpy
 pydantic
 jinja2
-python-multipart

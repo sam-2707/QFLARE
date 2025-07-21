@@ -4,7 +4,7 @@ from requests import post
 # Handles authentication with the server using a simulated quantum-safe key.
 def authenticate_with_server(device_id, key):
     print("[*] Authenticating with server...")
-    response = post("http://localhost:8000/validate", json={
+    response = post("http://server:8000/validate", json={
         "device_id": device_id,
         "key": key
     })

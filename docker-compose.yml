@@ -1,4 +1,3 @@
-version: '3.8'
 services:
   server:
     build: ./server
@@ -7,10 +6,16 @@ services:
     volumes:
       - ./server:/app/server
     command: uvicorn server.main:app --host 0.0.0.0 --port 8000
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/"]
+      interval: 5s
+      timeout: 2s
+      retries: 30
   edge_node:
     build: ./edge_node
     depends_on:
-      - server
+      server:
+        condition: service_healthy
     volumes:
       - ./edge_node:/app/edge_node
-    command: python edge_node/main.py
+    command: python main.py

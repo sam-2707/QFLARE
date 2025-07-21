@@ -17,3 +17,6 @@ def weighted_avg(client_weights: list[bytes], weights: list[float]) -> bytes:
 def save_aggregated_model(model_bytes: bytes, path: str = "models/global_model.pkl"):
     with open(path, "wb") as f:
         f.write(model_bytes)
+
+def aggregate_model(device_id, model_update):
+    print(f"Aggregating model update from {device_id}")
