@@ -4,7 +4,7 @@ server:
   secret_key: "supersecretkey"
 
 crypto:
-  pq_algorithm: "Kyber512"
+  pq_algorithm: "FrodoKEM-640-AES" # <-- Changed from Kyber512
   key_rotation_interval: 86400  # in seconds
 
 fl:

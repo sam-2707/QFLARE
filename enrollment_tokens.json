@@ -1,0 +1,30 @@
+{
+  "1qMM5usmosbBKNE9gAkbr7P-4afQuZkaOq26rC-AFfU": {
+    "device_id": "edge_device_001",
+    "created_at": 1753778409.3076541,
+    "expires_at": 1753864809.307655,
+    "used": false,
+    "hash": "9a096bf9aa6dc3a6f3370bf256a1ba83b59780908a226a4da3dae579bb944018"
+  },
+  "NJ8ipp5-Vb7dMWp4a4kDFRpNh_Kr7omCgKzymoVaM4E": {
+    "device_id": "edge_device_001",
+    "created_at": 1753781010.7659533,
+    "expires_at": 1753867410.7659538,
+    "used": false,
+    "hash": "12095d6ccb9a0073a6b4de3e5037e4bade7fe04b68be749b9317bcf96e3ceb68"
+  },
+  "kqWbMkrUOVFScJJAQD0Sl1Ok99TyebEzqBW40ET0M28": {
+    "device_id": "edge_device_009",
+    "created_at": 1753782046.1578863,
+    "expires_at": 1753868446.1578867,
+    "used": false,
+    "hash": "0b0fd8b2c3335f2bf4668479e64955bd3bbf6c2cc72c0f1737e2d84b64bbb64a"
+  },
+  "DAMs9g9ukehO2wJvICOYd52EhKVdKKP4m6g1Jt3-x0o": {
+    "device_id": "edge_device_009",
+    "created_at": 1753782522.8871746,
+    "expires_at": 1753868922.8871758,
+    "used": false,
+    "hash": "214fa1dd7465856d577b9001744e5b29bdfb366d3c2f63d40cfabe4997a5ad6c"
+  }
+}

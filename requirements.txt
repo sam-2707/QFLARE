@@ -5,3 +5,5 @@ numpy
 pydantic
 jinja2
 python-multipart
+pqcrypto
+oqs
