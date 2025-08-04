@@ -18,6 +18,12 @@ except ImportError:
     logging.warning("liboqs not available, using fallback cryptography")
     oqs = None
 
+try:
+    import pqcrypto
+except ImportError:
+    logging.warning("pqcrypto not available, using fallback cryptography")
+    pqcrypto = None
+
 from database import db_manager
 
 logger = logging.getLogger(__name__)

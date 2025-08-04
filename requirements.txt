@@ -8,7 +8,6 @@ python-multipart
 pqcrypto
 oqs
 sqlalchemy
-sqlite3
 python-dotenv
 aiofiles
 cryptography
