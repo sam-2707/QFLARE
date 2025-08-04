@@ -8,8 +8,11 @@ This is the main entry point for Vercel serverless deployment.
 import os
 import json
 from fastapi import FastAPI, Request, HTTPException
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, HTMLResponse
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
+from fastapi.templating import Jinja2Templates
+from pathlib import Path
 import logging
 import secrets
 
@@ -33,19 +36,25 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# Setup templates and static files
+templates = Jinja2Templates(directory="api/templates")
+app.mount("/static", StaticFiles(directory="api/static"), name="static")
+
 # In-memory storage for Vercel (serverless)
 devices = {}
 tokens = {}
 
-@app.get("/")
-async def root():
+@app.get("/", response_class=HTMLResponse)
+async def root(request: Request):
     """Main landing page."""
-    return {
-        "message": "QFLARE Server is running on Vercel!",
-        "status": "healthy",
-        "version": "1.0.0",
-        "deployment": "vercel"
-    }
+    return templates.TemplateResponse(
+        "index.html",
+        {
+            "request": request,
+            "server_url": "https://qflare-sam-2707s-projects.vercel.app",
+            "deployment": "vercel"
+        }
+    )
 
 @app.get("/health")
 async def health_check():
@@ -187,6 +196,18 @@ async def get_server_info():
             "deployment": "vercel"
         }
     }
+
+@app.get("/devices", response_class=HTMLResponse)
+async def devices_page(request: Request):
+    """Devices management page."""
+    return templates.TemplateResponse(
+        "devices.html",
+        {
+            "request": request,
+            "server_url": "https://qflare-sam-2707s-projects.vercel.app",
+            "deployment": "vercel"
+        }
+    )
 
 @app.get("/docs")
 async def api_docs():
