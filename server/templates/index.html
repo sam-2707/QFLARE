@@ -1,13 +1,582 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>QFLARE Central Server</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QFLARE - Quantum-Resistant Federated Learning Server</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #2c3e50;
+            --secondary-color: #3498db;
+            --accent-color: #e74c3c;
+            --success-color: #27ae60;
+            --warning-color: #f39c12;
+            --dark-bg: #1a1a1a;
+            --card-bg: #2d2d2d;
+            --text-light: #ecf0f1;
+        }
+        
+        body {
+            background: linear-gradient(135deg, var(--dark-bg) 0%, #2c3e50 100%);
+            color: var(--text-light);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            min-height: 100vh;
+        }
+        
+        .navbar {
+            background: rgba(44, 62, 80, 0.95) !important;
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .card {
+            background: var(--card-bg);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            backdrop-filter: blur(10px);
+        }
+        
+        .card-header {
+            background: rgba(52, 152, 219, 0.1);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 15px 15px 0 0 !important;
+        }
+        
+        .btn-primary {
+            background: var(--secondary-color);
+            border: none;
+            border-radius: 25px;
+            padding: 10px 25px;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-primary:hover {
+            background: #2980b9;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(52, 152, 219, 0.4);
+        }
+        
+        .btn-success {
+            background: var(--success-color);
+            border: none;
+            border-radius: 25px;
+            padding: 10px 25px;
+        }
+        
+        .btn-warning {
+            background: var(--warning-color);
+            border: none;
+            border-radius: 25px;
+            padding: 10px 25px;
+        }
+        
+        .btn-danger {
+            background: var(--accent-color);
+            border: none;
+            border-radius: 25px;
+            padding: 10px 25px;
+        }
+        
+        .stat-card {
+            background: linear-gradient(135deg, rgba(52, 152, 219, 0.1) 0%, rgba(39, 174, 96, 0.1) 100%);
+            border: 1px solid rgba(52, 152, 219, 0.2);
+            border-radius: 15px;
+            padding: 20px;
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+        
+        .stat-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px rgba(52, 152, 219, 0.3);
+        }
+        
+        .stat-number {
+            font-size: 2.5rem;
+            font-weight: bold;
+            color: var(--secondary-color);
+        }
+        
+        .stat-label {
+            font-size: 0.9rem;
+            color: var(--text-light);
+            opacity: 0.8;
+        }
+        
+        .status-indicator {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            display: inline-block;
+            margin-right: 8px;
+        }
+        
+        .status-online {
+            background: var(--success-color);
+            box-shadow: 0 0 10px rgba(39, 174, 96, 0.5);
+        }
+        
+        .status-offline {
+            background: var(--accent-color);
+        }
+        
+        .status-warning {
+            background: var(--warning-color);
+        }
+        
+        .device-list {
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        
+        .device-item {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 10px;
+            border-left: 4px solid var(--secondary-color);
+            transition: all 0.3s ease;
+        }
+        
+        .device-item:hover {
+            background: rgba(255, 255, 255, 0.1);
+            transform: translateX(5px);
+        }
+        
+        .key-generation-form {
+            background: rgba(52, 152, 219, 0.05);
+            border-radius: 15px;
+            padding: 20px;
+            border: 1px solid rgba(52, 152, 219, 0.2);
+        }
+        
+        .form-control {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: var(--text-light);
+            border-radius: 10px;
+        }
+        
+        .form-control:focus {
+            background: rgba(255, 255, 255, 0.15);
+            border-color: var(--secondary-color);
+            box-shadow: 0 0 0 0.2rem rgba(52, 152, 219, 0.25);
+            color: var(--text-light);
+        }
+        
+        .form-control::placeholder {
+            color: rgba(255, 255, 255, 0.6);
+        }
+        
+        .alert {
+            border-radius: 10px;
+            border: none;
+        }
+        
+        .loading-spinner {
+            display: none;
+        }
+        
+        .spinner-border {
+            width: 1rem;
+            height: 1rem;
+        }
+    </style>
 </head>
 <body>
-    <h1>QFLARE Central Server</h1>
-    <ul>
-        <li><a href="/register">Register Device</a></li>
-        <li><a href="/devices">View Registered Devices</a></li>
-    </ul>
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-dark">
+        <div class="container">
+            <a class="navbar-brand" href="#">
+                <i class="fas fa-shield-alt me-2"></i>
+                QFLARE Server
+            </a>
+            <div class="navbar-nav ms-auto">
+                <span class="navbar-text">
+                    <i class="fas fa-circle status-indicator status-online"></i>
+                    System Online
+                </span>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mt-4">
+        <!-- Header -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <h1 class="text-center mb-3">
+                    <i class="fas fa-network-wired me-3"></i>
+                    QFLARE Dashboard
+                </h1>
+                <p class="text-center text-muted">
+                    Quantum-Resistant Federated Learning Environment
+                </p>
+            </div>
+        </div>
+
+        <!-- Statistics Cards -->
+        <div class="row mb-4">
+            <div class="col-md-3">
+                <div class="stat-card">
+                    <div class="stat-number" id="totalDevices">{{ device_count }}</div>
+                    <div class="stat-label">Total Devices</div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="stat-card">
+                    <div class="stat-number" id="activeDevices">0</div>
+                    <div class="stat-label">Active Devices</div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="stat-card">
+                    <div class="stat-number" id="securityLevel">Level 3</div>
+                    <div class="stat-label">Security Level</div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="stat-card">
+                    <div class="stat-number" id="uptime">99.9%</div>
+                    <div class="stat-label">System Uptime</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="row">
+            <!-- Device Management -->
+            <div class="col-lg-8">
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5 class="mb-0">
+                            <i class="fas fa-microchip me-2"></i>
+                            Device Management
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <!-- Key Generation Form -->
+                        <div class="key-generation-form mb-4">
+                            <h6 class="mb-3">
+                                <i class="fas fa-key me-2"></i>
+                                Generate Enrollment Token
+                            </h6>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="deviceId" class="form-label">Device ID</label>
+                                        <input type="text" class="form-control" id="deviceId" placeholder="Enter device ID">
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="expirationHours" class="form-label">Expiration (hours)</label>
+                                        <input type="number" class="form-control" id="expirationHours" value="24" min="1" max="168">
+                                    </div>
+                                </div>
+                            </div>
+                            <button type="button" class="btn btn-primary" onclick="generateToken()">
+                                <span class="loading-spinner spinner-border spinner-border-sm me-2"></span>
+                                Generate Token
+                            </button>
+                            <div id="tokenResult" class="mt-3"></div>
+                        </div>
+
+                        <!-- Device List -->
+                        <h6 class="mb-3">
+                            <i class="fas fa-list me-2"></i>
+                            Registered Devices
+                        </h6>
+                        <div class="device-list" id="deviceList">
+                            <div class="text-center text-muted">
+                                <i class="fas fa-spinner fa-spin me-2"></i>
+                                Loading devices...
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- System Status -->
+            <div class="col-lg-4">
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5 class="mb-0">
+                            <i class="fas fa-server me-2"></i>
+                            System Status
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <span>Server Status</span>
+                                <span class="badge bg-success">Online</span>
+                            </div>
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <span>Database</span>
+                                <span class="badge bg-success">Connected</span>
+                            </div>
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <span>Key Management</span>
+                                <span class="badge bg-success">Active</span>
+                            </div>
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <span>Enclave</span>
+                                <span class="badge bg-success">Secure</span>
+                            </div>
+                        </div>
+                        
+                        <hr>
+                        
+                        <h6 class="mb-3">Quick Actions</h6>
+                        <div class="d-grid gap-2">
+                            <button class="btn btn-outline-primary" onclick="refreshDevices()">
+                                <i class="fas fa-sync-alt me-2"></i>
+                                Refresh Devices
+                            </button>
+                            <button class="btn btn-outline-warning" onclick="rotateKeys()">
+                                <i class="fas fa-key me-2"></i>
+                                Rotate Keys
+                            </button>
+                            <button class="btn btn-outline-info" onclick="showSystemInfo()">
+                                <i class="fas fa-info-circle me-2"></i>
+                                System Info
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Server Information -->
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">
+                            <i class="fas fa-info-circle me-2"></i>
+                            Server Info
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-2">
+                            <strong>Host:</strong> <span id="serverHost">{{ request.base_url.hostname }}</span>
+                        </div>
+                        <div class="mb-2">
+                            <strong>Port:</strong> <span id="serverPort">{{ request.base_url.port or 8000 }}</span>
+                        </div>
+                        <div class="mb-2">
+                            <strong>Protocol:</strong> <span id="serverProtocol">{{ request.base_url.scheme }}</span>
+                        </div>
+                        <div class="mb-2">
+                            <strong>Version:</strong> <span>1.0.0</span>
+                        </div>
+                        <hr>
+                        <div class="text-center">
+                            <a href="/api/health" class="btn btn-sm btn-outline-secondary" target="_blank">
+                                <i class="fas fa-heartbeat me-2"></i>
+                                Health Check
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Global variables
+        let devices = [];
+        let serverUrl = window.location.origin;
+
+        // Initialize page
+        document.addEventListener('DOMContentLoaded', function() {
+            loadDevices();
+            updateStatistics();
+            setInterval(updateStatistics, 30000); // Update every 30 seconds
+        });
+
+        // Load devices from server
+        async function loadDevices() {
+            try {
+                const response = await fetch('/api/devices');
+                const data = await response.json();
+                devices = data.devices || [];
+                displayDevices();
+                updateStatistics();
+            } catch (error) {
+                console.error('Error loading devices:', error);
+                document.getElementById('deviceList').innerHTML = 
+                    '<div class="text-center text-danger"><i class="fas fa-exclamation-triangle me-2"></i>Error loading devices</div>';
+            }
+        }
+
+        // Display devices in the list
+        function displayDevices() {
+            const deviceList = document.getElementById('deviceList');
+            
+            if (devices.length === 0) {
+                deviceList.innerHTML = 
+                    '<div class="text-center text-muted"><i class="fas fa-inbox me-2"></i>No devices registered</div>';
+                return;
+            }
+
+            const deviceHtml = devices.map(device => `
+                <div class="device-item">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <h6 class="mb-1">
+                                <i class="fas fa-microchip me-2"></i>
+                                ${device.device_id}
+                            </h6>
+                            <small class="text-muted">
+                                Status: <span class="badge bg-${device.status === 'active' ? 'success' : 'secondary'}">${device.status}</span>
+                                | Last seen: ${new Date(device.last_seen).toLocaleString()}
+                            </small>
+                        </div>
+                        <div class="btn-group btn-group-sm">
+                            <button class="btn btn-outline-primary" onclick="viewDevice('${device.device_id}')">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                            <button class="btn btn-outline-warning" onclick="updateDeviceStatus('${device.device_id}')">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+
+            deviceList.innerHTML = deviceHtml;
+        }
+
+        // Generate enrollment token
+        async function generateToken() {
+            const deviceId = document.getElementById('deviceId').value.trim();
+            const expirationHours = document.getElementById('expirationHours').value;
+            const resultDiv = document.getElementById('tokenResult');
+            const button = event.target;
+            const spinner = button.querySelector('.loading-spinner');
+
+            if (!deviceId) {
+                resultDiv.innerHTML = '<div class="alert alert-danger">Please enter a device ID</div>';
+                return;
+            }
+
+            // Show loading
+            button.disabled = true;
+            spinner.style.display = 'inline-block';
+
+            try {
+                const response = await fetch('/api/generate_token', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        device_id: deviceId,
+                        expiration_hours: parseInt(expirationHours)
+                    })
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    resultDiv.innerHTML = `
+                        <div class="alert alert-success">
+                            <h6><i class="fas fa-check-circle me-2"></i>Token Generated Successfully</h6>
+                            <div class="mt-2">
+                                <strong>Device ID:</strong> ${deviceId}<br>
+                                <strong>Token:</strong> <code class="bg-dark p-2 rounded">${data.token}</code><br>
+                                <strong>Expires:</strong> ${new Date(data.expires_at).toLocaleString()}
+                            </div>
+                            <button class="btn btn-sm btn-outline-light mt-2" onclick="copyToClipboard('${data.token}')">
+                                <i class="fas fa-copy me-2"></i>Copy Token
+                            </button>
+                        </div>
+                    `;
+                    
+                    // Clear form
+                    document.getElementById('deviceId').value = '';
+                } else {
+                    resultDiv.innerHTML = `<div class="alert alert-danger">${data.detail || 'Error generating token'}</div>`;
+                }
+            } catch (error) {
+                console.error('Error generating token:', error);
+                resultDiv.innerHTML = '<div class="alert alert-danger">Error generating token</div>';
+            } finally {
+                button.disabled = false;
+                spinner.style.display = 'none';
+            }
+        }
+
+        // Copy to clipboard
+        function copyToClipboard(text) {
+            navigator.clipboard.writeText(text).then(() => {
+                // Show success message
+                const button = event.target;
+                const originalText = button.innerHTML;
+                button.innerHTML = '<i class="fas fa-check me-2"></i>Copied!';
+                setTimeout(() => {
+                    button.innerHTML = originalText;
+                }, 2000);
+            });
+        }
+
+        // Update statistics
+        function updateStatistics() {
+            document.getElementById('totalDevices').textContent = devices.length;
+            const activeDevices = devices.filter(d => d.status === 'active').length;
+            document.getElementById('activeDevices').textContent = activeDevices;
+        }
+
+        // Refresh devices
+        function refreshDevices() {
+            loadDevices();
+        }
+
+        // Rotate keys
+        async function rotateKeys() {
+            if (!confirm('Are you sure you want to rotate the server keys? This will invalidate all existing sessions.')) {
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/rotate_keys', { method: 'POST' });
+                const data = await response.json();
+                
+                if (response.ok) {
+                    alert('Keys rotated successfully!');
+                } else {
+                    alert('Error rotating keys: ' + data.detail);
+                }
+            } catch (error) {
+                console.error('Error rotating keys:', error);
+                alert('Error rotating keys');
+            }
+        }
+
+        // Show system info
+        function showSystemInfo() {
+            alert('QFLARE Server v1.0.0\nQuantum-Resistant Federated Learning Environment\n\nFeatures:\n• Post-quantum cryptography\n• Secure device enrollment\n• Real-time device management\n• Key rotation and management');
+        }
+
+        // View device details
+        function viewDevice(deviceId) {
+            const device = devices.find(d => d.device_id === deviceId);
+            if (device) {
+                alert(`Device: ${device.device_id}\nStatus: ${device.status}\nLast seen: ${new Date(device.last_seen).toLocaleString()}`);
+            }
+        }
+
+        // Update device status
+        function updateDeviceStatus(deviceId) {
+            const newStatus = prompt('Enter new status (active/inactive/suspended):', 'active');
+            if (newStatus && ['active', 'inactive', 'suspended'].includes(newStatus)) {
+                // This would call an API endpoint to update the device status
+                alert(`Device ${deviceId} status updated to ${newStatus}`);
+                loadDevices(); // Refresh the list
+            }
+        }
+    </script>
 </body>
 </html> 

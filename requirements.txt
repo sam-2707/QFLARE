@@ -7,3 +7,11 @@ jinja2
 python-multipart
 pqcrypto
 oqs
+sqlalchemy
+sqlite3
+python-dotenv
+aiofiles
+cryptography
+bcrypt
+python-jose[cryptography]
+passlib[bcrypt]
