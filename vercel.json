@@ -2,23 +2,18 @@
   "version": 2,
   "builds": [
     {
-      "src": "server/main_cloud.py",
+      "src": "server/vercel_app.py",
       "use": "@vercel/python"
     }
   ],
   "routes": [
     {
       "src": "/(.*)",
-      "dest": "server/main_cloud.py"
+      "dest": "server/vercel_app.py"
     }
   ],
   "env": {
     "HOST": "0.0.0.0",
     "PORT": "8000"
-  },
-  "functions": {
-    "server/main_cloud.py": {
-      "maxDuration": 30
-    }
   }
 } 
