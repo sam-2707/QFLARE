@@ -1,0 +1,24 @@
+{
+  "version": 2,
+  "builds": [
+    {
+      "src": "server/main_cloud.py",
+      "use": "@vercel/python"
+    }
+  ],
+  "routes": [
+    {
+      "src": "/(.*)",
+      "dest": "server/main_cloud.py"
+    }
+  ],
+  "env": {
+    "HOST": "0.0.0.0",
+    "PORT": "8000"
+  },
+  "functions": {
+    "server/main_cloud.py": {
+      "maxDuration": 30
+    }
+  }
+} 
