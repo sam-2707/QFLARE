@@ -1,16 +1,295 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Register Device</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Device Registration - QFLARE Central Server</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        .header {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 30px;
+            margin-bottom: 30px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            text-align: center;
+        }
+        
+        .header h1 {
+            color: #2c3e50;
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            font-weight: 700;
+        }
+        
+        .header p {
+            color: #7f8c8d;
+            font-size: 1.1em;
+            margin-bottom: 20px;
+        }
+        
+        .nav-links {
+            margin-top: 20px;
+        }
+        
+        .nav-links a {
+            display: inline-block;
+            padding: 10px 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            text-decoration: none;
+            border-radius: 8px;
+            margin: 0 10px;
+            transition: all 0.3s ease;
+            font-weight: 500;
+        }
+        
+        .nav-links a:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+        }
+        
+        .registration-form {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 40px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        }
+        
+        .form-group {
+            margin-bottom: 25px;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #2c3e50;
+        }
+        
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 12px 16px;
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.3s ease;
+            background: white;
+        }
+        
+        .form-group input:focus,
+        .form-group select:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+        
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+        
+        .submit-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            width: 100%;
+            margin-top: 20px;
+        }
+        
+        .submit-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+        }
+        
+        .alert {
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-weight: 500;
+        }
+        
+        .alert-success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        
+        .alert-error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        
+        .alert-warning {
+            background: #fff3cd;
+            color: #856404;
+            border: 1px solid #ffeaa7;
+        }
+        
+        .info-box {
+            background: #e3f2fd;
+            border: 1px solid #bbdefb;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .info-box h3 {
+            color: #1976d2;
+            margin-bottom: 10px;
+        }
+        
+        .info-box p {
+            color: #424242;
+            line-height: 1.6;
+        }
+        
+        .device-id-example {
+            background: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 5px;
+            padding: 10px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+            color: #6c757d;
+            margin-top: 5px;
+        }
+    </style>
 </head>
 <body>
-    <h1>Register Device</h1>
-    {% if error %}<p style="color:red;">{{ error }}</p>{% endif %}
-    <form method="post">
-        <label for="device_id">Device ID:</label>
-        <input type="text" id="device_id" name="device_id" required>
-        <button type="submit">Register</button>
-    </form>
-    <p><a href="/">Back to Home</a></p>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <h1>🔐 Device Registration</h1>
+            <p>Register a new device for quantum-resistant federated learning</p>
+            <div class="nav-links">
+                <a href="/">🏠 Dashboard</a>
+                <a href="/devices">📱 Device Management</a>
+                <a href="/health">❤️ Health Check</a>
+            </div>
+        </div>
+        
+        <!-- Registration Form -->
+        <div class="registration-form">
+            <!-- Info Box -->
+            <div class="info-box">
+                <h3>ℹ️ Registration Information</h3>
+                <p>This registration form allows you to register devices for the QFLARE federated learning network. 
+                Each device will be assigned unique cryptographic keys for secure communication and model updates.</p>
+            </div>
+            
+            <!-- Messages -->
+            {% if message %}
+                <div class="alert alert-success">
+                    ✅ {{ message }}
+                </div>
+            {% endif %}
+            
+            {% if error %}
+                <div class="alert alert-error">
+                    ❌ {{ error }}
+                </div>
+            {% endif %}
+            
+            <!-- Registration Form -->
+            <form method="post" action="/register">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="device_id">📱 Device ID *</label>
+                        <input type="text" id="device_id" name="device_id" required 
+                               placeholder="Enter unique device identifier"
+                               value="{{ device_id or '' }}">
+                        <div class="device-id-example">Example: device_001, sensor_node_01, edge_device_alpha</div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="device_type">🔧 Device Type</label>
+                        <select id="device_type" name="device_type">
+                            <option value="edge">Edge Device</option>
+                            <option value="sensor">IoT Sensor</option>
+                            <option value="mobile">Mobile Device</option>
+                            <option value="server">Server Node</option>
+                            <option value="gateway">Gateway</option>
+                            <option value="other">Other</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="location">📍 Location</label>
+                        <input type="text" id="location" name="location" 
+                               placeholder="Device location (optional)"
+                               value="{{ location or '' }}">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="description">📝 Description</label>
+                        <input type="text" id="description" name="description" 
+                               placeholder="Brief description (optional)"
+                               value="{{ description or '' }}">
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="capabilities">⚡ Capabilities</label>
+                    <textarea id="capabilities" name="capabilities" rows="3" 
+                              placeholder="Device capabilities (e.g., CPU, memory, sensors)">{{ capabilities or '' }}</textarea>
+                </div>
+                
+                <button type="submit" class="submit-btn">
+                    🔐 Register Device
+                </button>
+            </form>
+            
+            <!-- Alternative Registration Methods -->
+            <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #e9ecef;">
+                <h3 style="color: #2c3e50; margin-bottom: 15px;">🔄 Alternative Registration Methods</h3>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 15px;">
+                    <div style="background: #f8f9fa; padding: 15px; border-radius: 8px;">
+                        <h4 style="color: #667eea; margin-bottom: 8px;">🔑 Secure API Enrollment</h4>
+                        <p style="font-size: 0.9em; color: #6c757d;">Use the secure enrollment API for programmatic device registration.</p>
+                        <a href="/api/enroll" style="color: #667eea; text-decoration: none; font-weight: 500;">API Documentation →</a>
+                    </div>
+                    <div style="background: #f8f9fa; padding: 15px; border-radius: 8px;">
+                        <h4 style="color: #667eea; margin-bottom: 8px;">📱 Device Management</h4>
+                        <p style="font-size: 0.9em; color: #6c757d;">View and manage all registered devices in the network.</p>
+                        <a href="/devices" style="color: #667eea; text-decoration: none; font-weight: 500;">View Devices →</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 </body>
 </html> 

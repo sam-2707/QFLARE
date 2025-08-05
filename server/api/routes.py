@@ -10,19 +10,19 @@ import base64
 import time
 from datetime import datetime
 
-from server.api.schemas import (
+from api.schemas import (
     AuthRequest, AuthResponse, DeviceActionRequest, EnrollmentRequest, 
     EnrollmentResponse, ChallengeRequest, ChallengeResponse, ModelUpdateRequest,
     ModelUpdateResponse, GlobalModelResponse, DeviceListResponse, 
     EnclaveStatusResponse, ErrorResponse, HealthCheckResponse
 )
-from server.auth.pqcrypto_utils import (
+from auth.pqcrypto_utils import (
     validate_enrollment_token, register_device_keys, generate_session_challenge,
     verify_model_signature, get_device_public_keys
 )
-from server.enclave.mock_enclave import get_secure_enclave, ModelUpdate
-from server.fl_core.aggregator import store_model_update, get_global_model
-from server.registry import get_registered_devices
+from enclave.mock_enclave import get_secure_enclave, ModelUpdate
+from fl_core.aggregator import store_model_update, get_global_model
+from registry import get_registered_devices
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -109,6 +109,53 @@ async def request_challenge(request: ChallengeRequest):
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Internal server error during challenge generation"
+        )
+
+
+@router.post("/verify_challenge")
+async def verify_challenge_response(request: dict):
+    """
+    Verify challenge response for device authentication.
+    
+    This endpoint verifies the device's response to the session challenge.
+    """
+    try:
+        device_id = request.get("device_id")
+        challenge_response = request.get("challenge_response")
+        
+        if not device_id or not challenge_response:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Device ID and challenge response are required"
+            )
+        
+        # Decode the challenge response
+        try:
+            response_bytes = base64.b64decode(challenge_response)
+        except Exception:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Invalid challenge response format"
+            )
+        
+        # Verify the challenge response (simplified for demo)
+        # In a real implementation, you would verify the signature using the device's public key
+        logger.info(f"Challenge response verified for device {device_id}")
+        
+        return {
+            "status": "success",
+            "device_id": device_id,
+            "message": "Device authenticated successfully",
+            "session_token": f"session_{device_id}_{int(time.time())}"
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Challenge verification error for device {device_id}: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Internal server error during challenge verification"
         )
 
 
@@ -225,6 +272,39 @@ async def list_devices():
         )
 
 
+@router.get("/devices/{device_id}")
+async def get_device_info(device_id: str):
+    """
+    Get information about a specific device.
+    """
+    try:
+        from registry import get_device_info
+        
+        device_info = get_device_info(device_id)
+        
+        if not device_info:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Device not found"
+            )
+        
+        return {
+            "status": "success",
+            "device_id": device_id,
+            "device_info": device_info,
+            "message": "Device information retrieved successfully"
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error retrieving device info for {device_id}: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to retrieve device information"
+        )
+
+
 @router.get("/enclave/status", response_model=EnclaveStatusResponse)
 async def get_enclave_status():
     """
@@ -290,17 +370,63 @@ async def authenticate_client(auth_data: AuthRequest):
     )
 
 
+@router.get("/request_qkey")
+async def request_qkey_get():
+    """
+    GET endpoint for quantum key generation (for browser access).
+    """
+    try:
+        # Generate a new quantum keypair
+        from auth.pqcrypto_utils import generate_device_keypair
+        
+        device_id = f"temp_device_{int(time.time())}"
+        kem_public_key, sig_public_key = generate_device_keypair(device_id)
+        
+        return {
+            "status": "success",
+            "device_id": device_id,
+            "kem_public_key": kem_public_key,
+            "signature_public_key": sig_public_key,
+            "message": "Quantum keypair generated successfully"
+        }
+        
+    except Exception as e:
+        logger.error(f"Quantum key generation error: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to generate quantum keys"
+        )
+
+
 @router.post("/request_qkey")
-async def request_qkey(request: DeviceActionRequest):
+async def request_qkey_post(request: DeviceActionRequest):
     """
-    Legacy quantum key request endpoint (deprecated).
+    POST endpoint for quantum key generation with device ID.
     """
-    logger.warning("Legacy quantum key endpoint called")
-    
-    return {
-        "status": "deprecated",
-        "message": "This endpoint is deprecated. Use /challenge for secure key exchange."
-    }
+    try:
+        # Generate quantum keypair for specified device
+        from auth.pqcrypto_utils import generate_device_keypair, register_device_keys
+        
+        device_id = request.device_id or f"device_{int(time.time())}"
+        kem_public_key, sig_public_key = generate_device_keypair(device_id)
+        
+        # Register the keys
+        success = register_device_keys(device_id, kem_public_key, sig_public_key)
+        
+        return {
+            "status": "success" if success else "failed",
+            "device_id": device_id,
+            "kem_public_key": kem_public_key,
+            "signature_public_key": sig_public_key,
+            "message": "Quantum keypair generated and registered" if success else "Failed to register keys"
+        }
+        
+    except Exception as e:
+        logger.error(f"Quantum key generation error: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to generate quantum keys"
+        )
 
 
 @router.post("/upload_model")

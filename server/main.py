@@ -5,7 +5,7 @@ This is the main FastAPI application for the QFLARE federated learning server.
 """
 
 from fastapi import FastAPI, Request, HTTPException, status
-from fastapi.responses import HTMLResponse, RedirectResponse, JSONResponse
+from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from fastapi.middleware.cors import CORSMiddleware
@@ -15,12 +15,11 @@ from slowapi.errors import RateLimitExceeded
 import logging
 import os
 from pathlib import Path
-from datetime import datetime, timedelta
-import json
+from datetime import datetime
 
 from api.routes import router as api_router
-from database import db_manager
-from key_manager import key_manager
+from fl_core.client_manager import register_client
+from registry import register_device, get_registered_devices
 
 # Configure logging
 logging.basicConfig(
@@ -51,13 +50,10 @@ app.add_middleware(
 )
 
 # Configure templates
-templates_dir = Path(__file__).parent / "templates"
-templates = Jinja2Templates(directory=str(templates_dir))
+templates = Jinja2Templates(directory="templates")
 
 # Mount static files
-from pathlib import Path
-static_dir = Path(__file__).parent / "static"
-app.mount("/static", StaticFiles(directory=str(static_dir)), name="static")
+app.mount("/static", StaticFiles(directory="static"), name="static")
 
 # Include API routes
 app.include_router(api_router, prefix="/api", tags=["api"])
@@ -68,8 +64,7 @@ app.include_router(api_router, prefix="/api", tags=["api"])
 async def root(request: Request):
     """Main landing page."""
     try:
-        devices = db_manager.get_all_devices()
-        device_count = len(devices)
+        device_count = len(get_registered_devices())
         return templates.TemplateResponse(
             "index.html", 
             {"request": request, "device_count": device_count}
@@ -84,7 +79,7 @@ async def root(request: Request):
 async def list_devices(request: Request):
     """Display list of registered devices."""
     try:
-        devices = db_manager.get_all_devices()
+        devices = get_registered_devices()
         return templates.TemplateResponse(
             "devices.html", 
             {"request": request, "devices": devices}
@@ -99,24 +94,22 @@ async def list_devices(request: Request):
 async def health_check(request: Request):
     """Health check endpoint."""
     try:
+        from fl_core.aggregator import get_aggregation_status
+        from enclave.mock_enclave import get_secure_enclave
+        
         # Check component status
-        device_stats = db_manager.get_device_statistics()
-        server_keys = key_manager.get_server_public_keys()
+        aggregation_status = get_aggregation_status()
+        enclave_status = get_secure_enclave().get_enclave_status()
         
         return {
             "status": "healthy",
-            "timestamp": datetime.now().isoformat(),
             "components": {
                 "server": "healthy",
-                "database": "connected",
-                "key_management": "active",
-                "enclave": "secure"
+                "enclave": enclave_status.get("status", "unknown"),
+                "aggregator": "healthy" if aggregation_status else "error"
             },
-            "statistics": device_stats,
-            "server_keys": {
-                "kem_algorithm": server_keys["kem_algorithm"],
-                "signature_algorithm": server_keys["signature_algorithm"]
-            }
+            "device_count": len(get_registered_devices()),
+            "aggregation_status": aggregation_status
         }
     except Exception as e:
         logger.error(f"Health check failed: {e}")
@@ -128,173 +121,26 @@ async def health_check(request: Request):
 async def system_status(request: Request):
     """Get system status information."""
     try:
-        device_stats = db_manager.get_device_statistics()
-        server_keys = key_manager.get_server_public_keys()
+        from registry import get_device_statistics
+        from fl_core.aggregator import get_aggregation_status
+        
+        device_stats = get_device_statistics()
+        aggregation_status = get_aggregation_status()
         
         return {
             "system_status": "operational",
             "device_statistics": device_stats,
+            "aggregation_status": aggregation_status,
             "security_features": {
                 "secure_enrollment": True,
                 "post_quantum_crypto": True,
                 "secure_enclave": True,
                 "poisoning_defense": True
-            },
-            "server_keys": {
-                "kem_algorithm": server_keys["kem_algorithm"],
-                "signature_algorithm": server_keys["signature_algorithm"]
             }
         }
     except Exception as e:
         logger.error(f"Error getting system status: {e}")
         raise HTTPException(status_code=500, detail="Error getting system status")
-
-
-# New API endpoints for web interface
-@app.post("/api/generate_token")
-@limiter.limit("10/minute")
-async def generate_enrollment_token(request: Request):
-    """Generate enrollment token for device registration."""
-    try:
-        body = await request.json()
-        device_id = body.get("device_id")
-        expiration_hours = body.get("expiration_hours", 24)
-        
-        if not device_id:
-            raise HTTPException(status_code=400, detail="Device ID required")
-        
-        # Generate enrollment token
-        token = key_manager.generate_enrollment_token(device_id, expiration_hours)
-        
-        # Calculate expiration time
-        expires_at = datetime.now() + timedelta(hours=expiration_hours)
-        
-        return {
-            "status": "success",
-            "token": token,
-            "device_id": device_id,
-            "expires_at": expires_at.isoformat(),
-            "message": "Enrollment token generated successfully"
-        }
-        
-    except HTTPException:
-        raise
-    except Exception as e:
-        logger.error(f"Error generating enrollment token: {e}")
-        raise HTTPException(status_code=500, detail="Error generating enrollment token")
-
-
-@app.post("/api/rotate_keys")
-@limiter.limit("5/minute")
-async def rotate_server_keys(request: Request):
-    """Rotate server keys."""
-    try:
-        success = key_manager.rotate_server_keys()
-        
-        if success:
-            return {
-                "status": "success",
-                "message": "Server keys rotated successfully",
-                "timestamp": datetime.now().isoformat()
-            }
-        else:
-            raise HTTPException(status_code=500, detail="Failed to rotate server keys")
-            
-    except HTTPException:
-        raise
-    except Exception as e:
-        logger.error(f"Error rotating server keys: {e}")
-        raise HTTPException(status_code=500, detail="Error rotating server keys")
-
-
-@app.get("/api/devices")
-@limiter.limit("30/minute")
-async def get_devices_api(request: Request):
-    """Get all devices via API."""
-    try:
-        devices = db_manager.get_all_devices()
-        
-        # Format devices for API response
-        device_list = []
-        for device in devices:
-            device_list.append({
-                "device_id": device["device_id"],
-                "status": device["status"],
-                "created_at": device["created_at"].isoformat() if device["created_at"] else None,
-                "last_seen": device["last_seen"].isoformat() if device["last_seen"] else None,
-                "has_kem_key": bool(device["kem_public_key"]),
-                "has_signature_key": bool(device["signature_public_key"])
-            })
-        
-        return {
-            "devices": device_list,
-            "total_count": len(device_list),
-            "active_count": len([d for d in device_list if d["status"] == "active"])
-        }
-        
-    except Exception as e:
-        logger.error(f"Error getting devices: {e}")
-        raise HTTPException(status_code=500, detail="Error getting devices")
-
-
-@app.put("/api/devices/{device_id}/status")
-@limiter.limit("30/minute")
-async def update_device_status_api(device_id: str, request: Request):
-    """Update device status."""
-    try:
-        body = await request.json()
-        new_status = body.get("status")
-        
-        if not new_status or new_status not in ["active", "inactive", "suspended"]:
-            raise HTTPException(status_code=400, detail="Invalid status")
-        
-        success = db_manager.update_device_status(device_id, new_status)
-        
-        if success:
-            return {
-                "status": "success",
-                "device_id": device_id,
-                "new_status": new_status,
-                "message": f"Device status updated to {new_status}"
-            }
-        else:
-            raise HTTPException(status_code=404, detail="Device not found")
-            
-    except HTTPException:
-        raise
-    except Exception as e:
-        logger.error(f"Error updating device status: {e}")
-        raise HTTPException(status_code=500, detail="Error updating device status")
-
-
-@app.get("/api/server_info")
-@limiter.limit("60/minute")
-async def get_server_info(request: Request):
-    """Get server information."""
-    try:
-        server_keys = key_manager.get_server_public_keys()
-        device_stats = db_manager.get_device_statistics()
-        
-        return {
-            "server_info": {
-                "name": "QFLARE Server",
-                "version": "1.0.0",
-                "host": request.base_url.hostname,
-                "port": request.base_url.port or 8000,
-                "protocol": request.base_url.scheme,
-                "startup_time": datetime.now().isoformat()
-            },
-            "security": {
-                "kem_algorithm": server_keys["kem_algorithm"],
-                "signature_algorithm": server_keys["signature_algorithm"],
-                "post_quantum_crypto": True
-            },
-            "statistics": device_stats
-        }
-        
-    except Exception as e:
-        logger.error(f"Error getting server info: {e}")
-        raise HTTPException(status_code=500, detail="Error getting server info")
 
 
 # Legacy endpoints for backward compatibility (deprecated)
@@ -316,7 +162,7 @@ async def register_form(request: Request):
 
 @app.post("/register", response_class=HTMLResponse)
 @limiter.limit("5/minute")
-async def register_device_legacy(request: Request, device_id: str = None):
+async def register_device_legacy(request: Request):
     """
     Legacy device registration (deprecated).
     
@@ -325,26 +171,81 @@ async def register_device_legacy(request: Request, device_id: str = None):
     """
     logger.warning("Legacy device registration called - use secure enrollment instead")
     
-    if not device_id:
-        raise HTTPException(status_code=400, detail="Device ID required")
-    
     try:
+        # Parse form data
+        form_data = await request.form()
+        device_id = form_data.get("device_id")
+        device_type = form_data.get("device_type", "edge")
+        location = form_data.get("location", "")
+        description = form_data.get("description", "")
+        capabilities = form_data.get("capabilities", "")
+        
+        if not device_id:
+            return templates.TemplateResponse(
+                "register.html", 
+                {
+                    "request": request, 
+                    "error": "Device ID is required",
+                    "device_id": device_id,
+                    "device_type": device_type,
+                    "location": location,
+                    "description": description,
+                    "capabilities": capabilities
+                }
+            )
+        
         # Register device with legacy method
-        success = db_manager.register_device(device_id, metadata={"registration_method": "legacy"})
+        device_info = {
+            "registration_method": "legacy",
+            "device_type": device_type,
+            "location": location,
+            "description": description,
+            "capabilities": capabilities,
+            "registration_time": datetime.now().isoformat()
+        }
+        
+        success = register_device(device_id, device_info)
         
         if success:
             return templates.TemplateResponse(
                 "register.html", 
-                {"request": request, "message": f"Device {device_id} registered (legacy method)"}
+                {
+                    "request": request, 
+                    "message": f"Device '{device_id}' registered successfully!",
+                    "device_id": "",
+                    "device_type": "edge",
+                    "location": "",
+                    "description": "",
+                    "capabilities": ""
+                }
             )
         else:
             return templates.TemplateResponse(
                 "register.html", 
-                {"request": request, "message": f"Failed to register device {device_id}"}
+                {
+                    "request": request, 
+                    "error": f"Failed to register device '{device_id}'. Device may already exist.",
+                    "device_id": device_id,
+                    "device_type": device_type,
+                    "location": location,
+                    "description": description,
+                    "capabilities": capabilities
+                }
             )
     except Exception as e:
         logger.error(f"Error in legacy device registration: {e}")
-        raise HTTPException(status_code=500, detail="Registration failed")
+        return templates.TemplateResponse(
+            "register.html", 
+            {
+                "request": request, 
+                "error": f"Registration failed: {str(e)}",
+                "device_id": device_id if 'device_id' in locals() else "",
+                "device_type": device_type if 'device_type' in locals() else "edge",
+                "location": location if 'location' in locals() else "",
+                "description": description if 'description' in locals() else "",
+                "capabilities": capabilities if 'capabilities' in locals() else ""
+            }
+        )
 
 
 @app.exception_handler(404)

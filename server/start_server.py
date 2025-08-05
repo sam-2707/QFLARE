@@ -1,36 +1,29 @@
 #!/usr/bin/env python3
 """
-Simple server runner from root directory.
+Simple server startup script that bypasses liboqs issues.
 """
 
 import sys
 import os
 import unittest.mock
-import subprocess
 
 # Mock liboqs before any imports
 sys.modules['oqs'] = unittest.mock.MagicMock()
 
-def run_server():
-    """Run the QFLARE server from root directory."""
-    print("🚀 Starting QFLARE Server from root directory...")
+def start_server():
+    """Start the QFLARE server."""
+    print("🚀 Starting QFLARE Server...")
     print("=" * 50)
     
     try:
-        # Change to server directory
-        server_dir = os.path.join(os.path.dirname(__file__), 'server')
-        os.chdir(server_dir)
-        print(f"✅ Changed to server directory: {server_dir}")
-        
-        # Test if we can import main
-        print("\n1. Testing server import...")
-        sys.path.insert(0, server_dir)
+        # Import the main app (using relative imports since we're in server directory)
         from main import app
         print("✅ Server app imported successfully")
         
-        # Start the server using uvicorn
-        print("\n2. Starting server with uvicorn...")
-        print("✅ Server will start on http://localhost:8000")
+        # Import uvicorn
+        import uvicorn
+        
+        print("✅ Starting server on http://localhost:8000")
         print("📋 Available endpoints:")
         print("   - GET  /health - Health check")
         print("   - GET  / - Main dashboard")
@@ -42,8 +35,7 @@ def run_server():
         print("\n🔧 Press Ctrl+C to stop the server")
         print("=" * 50)
         
-        # Start uvicorn
-        import uvicorn
+        # Start the server
         uvicorn.run(
             app,
             host="0.0.0.0",
@@ -59,4 +51,4 @@ def run_server():
     return True
 
 if __name__ == "__main__":
-    run_server() 
+    start_server() 

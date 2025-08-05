@@ -1,1 +1,0 @@
-web: python server/main_cloud.py 
