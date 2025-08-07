@@ -1,19 +1,19 @@
 #!/usr/bin/env python3
 """
-Simple server runner from root directory.
+QFLARE Server Startup Script
+Run this from the project root directory.
 """
 
 import sys
 import os
-import unittest.mock
-import subprocess
+from unittest.mock import MagicMock
 
-# Mock liboqs before any imports
-sys.modules['oqs'] = unittest.mock.MagicMock()
+# Mock liboqs to avoid import issues
+sys.modules['oqs'] = MagicMock()
 
-def run_server():
-    """Run the QFLARE server from root directory."""
-    print("🚀 Starting QFLARE Server from root directory...")
+def start_qflare_server():
+    """Start the QFLARE server from project root."""
+    print("🚀 Starting QFLARE Server...")
     print("=" * 50)
     
     try:
@@ -22,19 +22,23 @@ def run_server():
         os.chdir(server_dir)
         print(f"✅ Changed to server directory: {server_dir}")
         
-        # Test if we can import main
-        print("\n1. Testing server import...")
-        sys.path.insert(0, server_dir)
+        # Add current directory to Python path
+        sys.path.insert(0, '.')
+        
+        # Import the main app
         from main import app
         print("✅ Server app imported successfully")
         
-        # Start the server using uvicorn
-        print("\n2. Starting server with uvicorn...")
-        print("✅ Server will start on http://localhost:8000")
+        # Import uvicorn
+        import uvicorn
+        
+        print("✅ Starting server on http://localhost:8000")
         print("📋 Available endpoints:")
         print("   - GET  /health - Health check")
         print("   - GET  / - Main dashboard")
         print("   - GET  /devices - Device management")
+        print("   - GET  /register - Device registration")
+        print("   - GET  /api/request_qkey - Quantum key generation")
         print("   - POST /api/enroll - Device enrollment")
         print("   - POST /api/challenge - Session challenge")
         print("   - POST /api/submit_model - Model submission")
@@ -42,8 +46,7 @@ def run_server():
         print("\n🔧 Press Ctrl+C to stop the server")
         print("=" * 50)
         
-        # Start uvicorn
-        import uvicorn
+        # Start the server
         uvicorn.run(
             app,
             host="0.0.0.0",
@@ -59,4 +62,4 @@ def run_server():
     return True
 
 if __name__ == "__main__":
-    run_server() 
+    start_qflare_server() 
