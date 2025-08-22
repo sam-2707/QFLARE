@@ -3,63 +3,49 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Secure Device Enrollment - QFLARE</title>
+    <title>Interactive Registration - QFLARE</title>
     <link rel="stylesheet" href="/static/style.css">
 </head>
 <body>
     <div class="container">
         <div class="header">
-            <h1>🔐 Secure Device Enrollment</h1>
-            <p>Register a new device with quantum-resistant keys.</p>
+            <h1>🔐 Interactive Device Enrollment</h1>
+            <p>Generate Post-Quantum keys for a new device.</p>
         </div>
 
         <div class="card">
             <h2>Step 1: Generate Quantum Keys</h2>
-            <p>Generate a new set of quantum-resistant keys for your device.</p>
-            <button id="generate-keys-btn" class="btn">Generate Keys</button>
-            <div id="keys-container" style="display:none;">
-                <h3>Public Keys</h3>
-                <div class="key-box">
-                    <label>KEM Public Key:</label>
-                    <textarea id="kem-public-key" readonly></textarea>
+            <p style="margin-bottom: 20px;">Click the button below to generate a new set of quantum-resistant keys for your device. These keys are required for the secure enrollment process.</p>
+            
+            <button id="generateKeysBtn" class="submit-btn">Generate New Keys</button>
+
+            <div id="loadingSpinner" style="display: none; text-align: center; padding: 20px;">
+                <p>Generating keys...</p>
+            </div>
+
+            <div id="keyGenResult" style="display: none; margin-top: 30px;">
+                <h3>Generated Keys:</h3>
+                <div class="form-group">
+                    <label>Device ID:</label>
+                    <textarea id="deviceId" rows="1" readonly></textarea>
                 </div>
-                <div class="key-box">
-                    <label>Signature Public Key:</label>
-                    <textarea id="signature-public-key" readonly></textarea>
+                <div class="form-group">
+                    <label>KEM Public Key (FrodoKEM-640-AES):</label>
+                    <textarea id="kemKey" rows="4" readonly></textarea>
                 </div>
-                <h3>Private Keys (Save these securely!)</h3>
-                <div class="key-box">
-                    <label>KEM Private Key:</label>
-                    <textarea id="kem-private-key" readonly></textarea>
+                <div class="form-group">
+                    <label>Signature Public Key (Dilithium2):</label>
+                    <textarea id="sigKey" rows="4" readonly></textarea>
                 </div>
-                <div class="key-box">
-                    <label>Signature Private Key:</label>
-                    <textarea id="signature-private-key" readonly></textarea>
+                <div class="alert alert-success">
+                    <strong>Next Step:</strong> Use these keys with an enrollment token to register your device via the `/api/enroll` endpoint.
                 </div>
-                <a id="download-keys-btn" class="btn" style="display:none;">Download Keys</a>
             </div>
         </div>
-
-        <div class="card">
-            <h2>Step 2: Register Device</h2>
-            <form id="register-form">
-                <div class="form-group">
-                    <label for="device-id">Device ID:</label>
-                    <input type="text" id="device-id" name="device_id" required>
-                </div>
-                <div class="form-group">
-                    <label for="kem-public-key-form">KEM Public Key:</label>
-                    <input type="text" id="kem-public-key-form" name="kem_public_key" readonly>
-                </div>
-                <div class="form-group">
-                    <label for="signature-public-key-form">Signature Public Key:</label>
-                    <input type="text" id="signature-public-key-form" name="signature_public_key" readonly>
-                </div>
-                <button type="submit" class="btn">Register Device</button>
-            </form>
+        
+        <div class="footer">
+            <p><a href="/" style="color: white;">← Back to Dashboard</a></p>
         </div>
-        <div id="message-container"></div>
     </div>
-    <script src="/static/script.js"></script>
-</body>
+    <script src="/static/script.js"></script> </body>
 </html>

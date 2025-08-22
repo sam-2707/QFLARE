@@ -76,6 +76,11 @@ async def root(request: Request):
         logger.error(f"Error rendering root page: {e}")
         raise HTTPException(status_code=500, detail="Internal server error")
 
+@app.get("/register-v2", response_class=HTMLResponse)
+@limiter.limit("10/minute")
+async def register_v2_form(request: Request):
+    """Serves the new interactive registration page."""
+    return templates.TemplateResponse("register_v2.html", {"request": request})
 
 @app.get("/devices", response_class=HTMLResponse)
 @limiter.limit("30/minute")

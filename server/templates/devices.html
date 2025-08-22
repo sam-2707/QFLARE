@@ -3,260 +3,33 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Device Management - QFLARE Central Server</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-        
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
-            color: #333;
-        }
-        
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 20px;
-        }
-        
-        .header {
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(10px);
-            border-radius: 15px;
-            padding: 30px;
-            margin-bottom: 30px;
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
-            text-align: center;
-        }
-        
-        .header h1 {
-            color: #2c3e50;
-            font-size: 2.5em;
-            margin-bottom: 10px;
-            font-weight: 700;
-        }
-        
-        .header p {
-            color: #7f8c8d;
-            font-size: 1.1em;
-            margin-bottom: 20px;
-        }
-        
-        .nav-links {
-            margin-top: 20px;
-        }
-        
-        .nav-links a {
-            display: inline-block;
-            padding: 10px 20px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            text-decoration: none;
-            border-radius: 8px;
-            margin: 0 10px;
-            transition: all 0.3s ease;
-            font-weight: 500;
-        }
-        
-        .nav-links a:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
-        }
-        
-        .content {
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(10px);
-            border-radius: 15px;
-            padding: 30px;
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
-        }
-        
-        .device-count {
-            text-align: center;
-            margin-bottom: 30px;
-            padding: 20px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            border-radius: 10px;
-            color: white;
-        }
-        
-        .device-count h2 {
-            font-size: 2em;
-            margin-bottom: 10px;
-        }
-        
-        .device-list {
-            list-style: none;
-        }
-        
-        .device-item {
-            background: #f8f9fa;
-            border: 2px solid #e9ecef;
-            border-radius: 10px;
-            padding: 20px;
-            margin-bottom: 15px;
-            transition: all 0.3s ease;
-        }
-        
-        .device-item:hover {
-            transform: translateX(5px);
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-        }
-        
-        .device-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 15px;
-        }
-        
-        .device-id {
-            font-size: 1.2em;
-            font-weight: bold;
-            color: #2c3e50;
-        }
-        
-        .device-status {
-            padding: 5px 12px;
-            border-radius: 20px;
-            font-size: 0.9em;
-            font-weight: 600;
-        }
-        
-        .status-online {
-            background: #27ae60;
-            color: white;
-        }
-        
-        .status-offline {
-            background: #e74c3c;
-            color: white;
-        }
-        
-        .device-details {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 15px;
-            margin-top: 15px;
-        }
-        
-        .detail-item {
-            background: white;
-            padding: 10px;
-            border-radius: 5px;
-            border-left: 4px solid #667eea;
-        }
-        
-        .detail-label {
-            font-weight: bold;
-            color: #7f8c8d;
-            font-size: 0.9em;
-        }
-        
-        .detail-value {
-            color: #2c3e50;
-            font-family: 'Courier New', monospace;
-            word-break: break-all;
-        }
-        
-        .empty-state {
-            text-align: center;
-            padding: 60px 20px;
-            color: #7f8c8d;
-        }
-        
-        .empty-state h3 {
-            font-size: 1.5em;
-            margin-bottom: 10px;
-            color: #2c3e50;
-        }
-        
-        .empty-state p {
-            margin-bottom: 20px;
-        }
-        
-        .register-btn {
-            display: inline-block;
-            padding: 12px 24px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            text-decoration: none;
-            border-radius: 8px;
-            font-weight: 500;
-            transition: all 0.3s ease;
-        }
-        
-        .register-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
-        }
-    </style>
-</head>
+    <title>Device Management - QFLARE</title>
+    <link rel="stylesheet" href="/static/style.css"> </head>
 <body>
     <div class="container">
-        <!-- Header -->
         <div class="header">
             <h1>📱 Device Management</h1>
             <p>Monitor and manage registered devices in the QFLARE network</p>
-            <div class="nav-links">
-                <a href="/">🏠 Dashboard</a>
-                <a href="/register">🔐 Register Device</a>
-                <a href="/health">❤️ Health Check</a>
-                <a href="/status">📊 System Status</a>
-            </div>
         </div>
-        
-        <!-- Content -->
-        <div class="content">
-            <!-- Device Count -->
-            <div class="device-count">
-                <h2>{{ devices|length }} Registered Device{{ 's' if devices|length != 1 else '' }}</h2>
-                <p>Total devices in the QFLARE network</p>
-            </div>
-            
-            <!-- Device List -->
-            {% if devices %}
-                <ul class="device-list">
+
+        <div class="card">
+             <h2>Registered Devices</h2>
+             {% if devices %}
+                <ul>
                     {% for device in devices %}
-                    <li class="device-item">
-                        <div class="device-header">
-                            <span class="device-id">📱 {{ device.device_id }}</span>
-                            <span class="device-status status-online">🟢 Online</span>
-                        </div>
-                        <div class="device-details">
-                            <div class="detail-item">
-                                <div class="detail-label">Device ID</div>
-                                <div class="detail-value">{{ device.device_id }}</div>
-                            </div>
-                            <div class="detail-item">
-                                <div class="detail-label">Registration Time</div>
-                                <div class="detail-value">{{ device.registration_time or 'N/A' }}</div>
-                            </div>
-                            <div class="detail-item">
-                                <div class="detail-label">Last Activity</div>
-                                <div class="detail-value">{{ device.last_activity or 'N/A' }}</div>
-                            </div>
-                            <div class="detail-item">
-                                <div class="detail-label">Status</div>
-                                <div class="detail-value">🟢 Active</div>
-                            </div>
-                        </div>
-                    </li>
+                        <li>{{ device.device_id }} - Status: {{ device.status }}</li>
                     {% endfor %}
                 </ul>
-            {% else %}
-                <div class="empty-state">
-                    <h3>📱 No Devices Registered</h3>
-                    <p>No devices have been registered yet. Register the first device to get started with federated learning.</p>
-                    <a href="/register" class="register-btn">🔐 Register First Device</a>
-                </div>
-            {% endif %}
+             {% else %}
+                <p>No devices have been registered yet.</p>
+             {% endif %}
+             <br>
+             <a href="/" class="link-list">Back to Dashboard</a>
+        </div>
+        
+        <div class="footer">
+            <p>QFLARE Central Server</p>
         </div>
     </div>
 </body>
-</html> 
+</html>
