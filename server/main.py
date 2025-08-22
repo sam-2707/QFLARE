@@ -147,6 +147,16 @@ async def system_status(request: Request):
 
 
 # Legacy endpoints for backward compatibility (deprecated)
+@app.get("/register-v2", response_class=HTMLResponse)
+async def register_v2_form(request: Request):
+    return templates.TemplateResponse("register_v2.html", {"request": request})
+
+
+@app.get("/authenticate", response_class=HTMLResponse)
+async def authenticate_form(request: Request):
+    return templates.TemplateResponse("authenticate.html", {"request": request})
+
+
 @app.get("/register", response_class=HTMLResponse)
 @limiter.limit("5/minute")
 async def register_form(request: Request):

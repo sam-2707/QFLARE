@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Device Authentication - QFLARE</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🔒 Device Authentication</h1>
+            <p>Authenticate your device using a challenge-response mechanism.</p>
+        </div>
+
+        <div class="card">
+            <h2>Step 1: Get Challenge</h2>
+            <form id="challenge-form">
+                <div class="form-group">
+                    <label for="device-id">Device ID:</label>
+                    <input type="text" id="device-id" name="device_id" required>
+                </div>
+                <button type="submit" class="btn">Get Challenge</button>
+            </form>
+            <div id="challenge-container" style="display:none;">
+                <h3>Challenge</h3>
+                <div class="key-box">
+                    <textarea id="challenge" readonly></textarea>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>Step 2: Sign Challenge and Authenticate</h2>
+            <form id="authenticate-form">
+                <div class="form-group">
+                    <label for="signature">Signature:</label>
+                    <input type="text" id="signature" name="signature" required>
+                </div>
+                <button type="submit" class="btn">Authenticate</button>
+            </form>
+        </div>
+        <div id="message-container"></div>
+    </div>
+    <script src="/static/auth.js"></script>
+</body>
+</html>
