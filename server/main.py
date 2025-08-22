@@ -49,11 +49,14 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Configure templates
-templates = Jinja2Templates(directory="templates")
+# Resolve absolute paths so UI works regardless of CWD
+BASE_DIR = Path(__file__).resolve().parent
 
-# Mount static files
-app.mount("/static", StaticFiles(directory="static"), name="static")
+# Configure templates (absolute path)
+templates = Jinja2Templates(directory=str(BASE_DIR / "templates"))
+
+# Mount static files (absolute path)
+app.mount("/static", StaticFiles(directory=str(BASE_DIR / "static")), name="static")
 
 # Include API routes
 app.include_router(api_router, prefix="/api", tags=["api"])

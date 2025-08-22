@@ -20,10 +20,10 @@ The quantum keys you generate are used for secure federated learning communicati
 ### **Step 1: Generate Keys**
 ```bash
 # Browser access
-http://172.18.224.1:8000/api/request_qkey
+http://localhost:8000/api/request_qkey
 
 # Or via API
-curl http://172.18.224.1:8000/api/request_qkey
+curl http://localhost:8000/api/request_qkey
 ```
 
 ### **Step 2: Register Device with Keys**
@@ -31,7 +31,7 @@ curl http://172.18.224.1:8000/api/request_qkey
 import requests
 
 # Your generated keys
-response = requests.get("http://172.18.224.1:8000/api/request_qkey")
+response = requests.get("http://localhost:8000/api/request_qkey")
 keys = response.json()
 
 # Register device with keys
@@ -42,7 +42,7 @@ device_data = {
 }
 
 register_response = requests.post(
-    "http://172.18.224.1:8000/api/enroll",
+    "http://localhost:8000/api/enroll",
     json=device_data
 )
 ```
@@ -52,7 +52,7 @@ register_response = requests.post(
 #### **A. Device Enrollment**
 ```python
 # 1. Generate quantum keys
-keys = requests.get("http://172.18.224.1:8000/api/request_qkey").json()
+keys = requests.get("http://localhost:8000/api/request_qkey").json()
 
 # 2. Register device
 enrollment_data = {
@@ -66,7 +66,7 @@ enrollment_data = {
 }
 
 response = requests.post(
-    "http://172.18.224.1:8000/api/enroll",
+    "http://localhost:8000/api/enroll",
     json=enrollment_data
 )
 ```
@@ -98,7 +98,7 @@ model_data = {
 }
 
 response = requests.post(
-    "http://172.18.224.1:8000/api/submit_model",
+    "http://localhost:8000/api/submit_model",
     json=model_data
 )
 ```
@@ -107,7 +107,7 @@ response = requests.post(
 ```python
 # 1. Request session challenge
 challenge_response = requests.post(
-    "http://172.18.224.1:8000/api/challenge",
+    "http://localhost:8000/api/challenge",
     json={"device_id": "edge_device_001"}
 )
 
@@ -124,7 +124,7 @@ challenge_data = {
 }
 
 auth_response = requests.post(
-    "http://172.18.224.1:8000/api/verify_challenge",
+    "http://localhost:8000/api/verify_challenge",
     json=challenge_data
 )
 ```
@@ -141,7 +141,7 @@ def setup_device():
     
     # 1. Generate quantum keys
     print("🔐 Generating quantum keys...")
-    keys_response = requests.get("http://172.18.224.1:8000/api/request_qkey")
+    keys_response = requests.get("http://localhost:8000/api/request_qkey")
     keys = keys_response.json()
     
     device_id = f"edge_device_{int(time.time())}"
@@ -159,7 +159,7 @@ def setup_device():
     }
     
     register_response = requests.post(
-        "http://172.18.224.1:8000/register",
+        "http://localhost:8000/register",
         data=registration_data
     )
     
@@ -200,7 +200,7 @@ def submit_secure_model(device_id, signature_key):
     }
     
     response = requests.post(
-        "http://172.18.224.1:8000/api/submit_model",
+        "http://localhost:8000/api/submit_model",
         json=model_data
     )
     
@@ -237,10 +237,10 @@ Local Training → Sign Model → Submit → Server Verifies → Aggregation
 ### **Check Device Status**
 ```bash
 # View all registered devices
-http://172.18.224.1:8000/devices
+http://localhost:8000/devices
 
 # Check device info via API
-curl http://172.18.224.1:8000/api/devices
+curl http://localhost:8000/api/devices
 ```
 
 ### **Verify Key Registration**
@@ -249,7 +249,7 @@ import requests
 
 def check_device_keys(device_id):
     """Check if device keys are properly registered."""
-    response = requests.get(f"http://172.18.224.1:8000/api/devices/{device_id}")
+    response = requests.get(f"http://localhost:8000/api/devices/{device_id}")
     
     if response.status_code == 200:
         device_info = response.json()
@@ -271,10 +271,10 @@ def check_device_keys(device_id):
 
 ## 🔗 **Quick Links**
 
-- **Dashboard**: `http://172.18.224.1:8000/`
-- **Device Registration**: `http://172.18.224.1:8000/register`
-- **Quantum Key Generation**: `http://172.18.224.1:8000/api/request_qkey`
-- **Device Management**: `http://172.18.224.1:8000/devices`
+- **Dashboard**: `http://localhost:8000/`
+- **Device Registration**: `http://localhost:8000/register`
+- **Quantum Key Generation**: `http://localhost:8000/api/request_qkey`
+- **Device Management**: `http://localhost:8000/devices`
 
 ---
 
