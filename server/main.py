@@ -23,21 +23,25 @@ from fl_core.client_manager import register_client
 from registry import register_device, get_registered_devices
 
 # Configure logging
+# 
+# # Configure logging
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
 )
 logger = logging.getLogger(__name__)
+# --- CORRECTED ORDER ---
+# 1. Initialize Limiter first
+limiter = Limiter(key_func=get_remote_address)
 
-# Initialize FastAPI app
+# 2. Initialize FastAPI app
 app = FastAPI(
     title="QFLARE Server",
     description="Quantum-Resistant Federated Learning Server",
     version="1.0.0"
 )
 
-# Configure rate limiting
-limiter = Limiter(key_func=get_remote_address)
+# 3. Apply middleware and state to the app
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
@@ -49,8 +53,9 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+# --- END CORRECTION ---
 
-# Resolve absolute paths so UI works regardless of CWD
+# Define BASE_DIR as the directory containing this file
 BASE_DIR = Path(__file__).resolve().parent
 
 # Configure templates (absolute path)
