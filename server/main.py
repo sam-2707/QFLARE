@@ -14,6 +14,7 @@ from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
 import logging
 import os
+import time
 from pathlib import Path
 from datetime import datetime
 
@@ -79,8 +80,11 @@ async def root(request: Request):
 @app.get("/register-v2", response_class=HTMLResponse)
 @limiter.limit("10/minute")
 async def register_v2_form(request: Request):
-    """Serves the new interactive registration page."""
-    return templates.TemplateResponse("register_v2.html", {"request": request})
+    """Serves the new interactive registration page with a cache-busting timestamp."""
+    return templates.TemplateResponse(
+        "register_v2.html", 
+        {"request": request, "timestamp": int(time.time())} # Add the timestamp here
+    )
 
 @app.get("/devices", response_class=HTMLResponse)
 @limiter.limit("30/minute")
@@ -96,6 +100,11 @@ async def list_devices(request: Request):
         logger.error(f"Error rendering devices page: {e}")
         raise HTTPException(status_code=500, detail="Internal server error")
 
+@app.get("/status", response_class=HTMLResponse)
+@limiter.limit("30/minute")
+async def system_status_page(request: Request):
+    """Serves the main system status and monitoring page."""
+    return templates.TemplateResponse("status.html", {"request": request})
 
 @app.get("/health")
 @limiter.limit("60/minute")
