@@ -1,0 +1,40 @@
+# QFLARE Prometheus Configuration
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+rule_files:
+  # - "first_rules.yml"
+  # - "second_rules.yml"
+
+scrape_configs:
+  # The job name is added as a label `job=<job_name>` to any timeseries scraped from this config.
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
+
+  # QFLARE Core Server
+  - job_name: 'qflare-server'
+    static_configs:
+      - targets: ['qflare-server:8000']
+    scrape_interval: 5s
+    metrics_path: '/metrics'
+
+  # Redis
+  - job_name: 'redis'
+    static_configs:
+      - targets: ['redis:6379']
+
+  # Node Exporter (if running on host)
+  - job_name: 'node'
+    static_configs:
+      - targets: ['host.docker.internal:9100']
+
+  # Custom QFLARE metrics
+  - job_name: 'qflare-custom'
+    static_configs:
+      - targets: ['qflare-server:8000']
+    scrape_interval: 10s
+    metrics_path: '/api/v1/metrics'
+    params:
+      format: ['prometheus']

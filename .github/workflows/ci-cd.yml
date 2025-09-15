@@ -1,0 +1,394 @@
+# QFLARE CI/CD Pipeline
+# GitHub Actions workflow for automated testing, building, and deployment
+
+name: QFLARE CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main, develop ]
+    tags: [ 'v*' ]
+  pull_request:
+    branches: [ main ]
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME_SERVER: qflare/server
+  IMAGE_NAME_EDGE: qflare/edge
+
+jobs:
+  # Code Quality and Testing
+  test:
+    name: Test and Quality Checks
+    runs-on: ubuntu-latest
+    
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_PASSWORD: test_password
+          POSTGRES_DB: qflare_test
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+      
+      redis:
+        image: redis:7
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 6379:6379
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+        cache: 'pip'
+
+    - name: Install system dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y build-essential cmake ninja-build
+
+    - name: Install Python dependencies
+      run: |
+        pip install --upgrade pip setuptools wheel
+        pip install -r requirements.txt
+        pip install -r server/requirements.txt
+        pip install pytest pytest-cov pytest-asyncio pytest-mock
+        pip install flake8 black mypy pylint bandit safety
+
+    - name: Build liboqs
+      run: |
+        cd liboqs
+        mkdir build && cd build
+        cmake -GNinja -DCMAKE_INSTALL_PREFIX=/usr/local -DOQS_BUILD_ONLY_LIB=ON ..
+        ninja && sudo ninja install
+        sudo ldconfig
+
+    - name: Install liboqs-python
+      run: |
+        cd liboqs-python
+        pip install .
+
+    - name: Code formatting check
+      run: |
+        black --check --diff .
+        
+    - name: Linting
+      run: |
+        flake8 server/ edge_node/ models/ scripts/ --max-line-length=88 --extend-ignore=E203,W503
+        pylint server/ edge_node/ models/ scripts/ --disable=C0114,C0116,R0903
+        
+    - name: Type checking
+      run: |
+        mypy server/ edge_node/ models/ --ignore-missing-imports
+
+    - name: Security check
+      run: |
+        bandit -r server/ edge_node/ models/ scripts/ -f json -o bandit-report.json
+        safety check --json --output safety-report.json
+      continue-on-error: true
+
+    - name: Unit tests
+      env:
+        DATABASE_URL: postgresql://postgres:test_password@localhost:5432/qflare_test
+        REDIS_URL: redis://localhost:6379/0
+        QFLARE_JWT_SECRET: test-secret-key
+        QFLARE_SGX_MODE: SIM
+      run: |
+        pytest tests/ -v --cov=server --cov=edge_node --cov=models \
+               --cov-report=xml --cov-report=html --cov-report=term-missing
+
+    - name: Integration tests
+      env:
+        DATABASE_URL: postgresql://postgres:test_password@localhost:5432/qflare_test
+        REDIS_URL: redis://localhost:6379/0
+        QFLARE_JWT_SECRET: test-secret-key
+        QFLARE_SGX_MODE: SIM
+      run: |
+        pytest tests/integration/ -v --tb=short
+
+    - name: Upload coverage reports
+      uses: codecov/codecov-action@v3
+      with:
+        file: ./coverage.xml
+        flags: unittests
+        name: codecov-umbrella
+
+    - name: Upload test artifacts
+      uses: actions/upload-artifact@v3
+      if: always()
+      with:
+        name: test-reports
+        path: |
+          htmlcov/
+          bandit-report.json
+          safety-report.json
+          pytest-report.xml
+
+  # Security Scanning
+  security:
+    name: Security Scanning
+    runs-on: ubuntu-latest
+    needs: test
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Run Trivy vulnerability scanner
+      uses: aquasecurity/trivy-action@master
+      with:
+        scan-type: 'fs'
+        scan-ref: '.'
+        format: 'sarif'
+        output: 'trivy-results.sarif'
+
+    - name: Upload Trivy scan results to GitHub Security
+      uses: github/codeql-action/upload-sarif@v2
+      with:
+        sarif_file: 'trivy-results.sarif'
+
+    - name: Docker Security Scan
+      run: |
+        docker build -f docker/Dockerfile.server -t qflare-server-test .
+        docker run --rm -v /var/run/docker.sock:/var/run/docker.sock \
+          aquasec/trivy:latest image --exit-code 1 --severity HIGH,CRITICAL qflare-server-test
+
+  # Build Docker Images
+  build:
+    name: Build Docker Images
+    runs-on: ubuntu-latest
+    needs: [test, security]
+    
+    outputs:
+      server-image: ${{ steps.meta-server.outputs.tags }}
+      edge-image: ${{ steps.meta-edge.outputs.tags }}
+      server-digest: ${{ steps.build-server.outputs.digest }}
+      edge-digest: ${{ steps.build-edge.outputs.digest }}
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+
+    - name: Log in to Container Registry
+      uses: docker/login-action@v3
+      with:
+        registry: ${{ env.REGISTRY }}
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Extract metadata for server image
+      id: meta-server
+      uses: docker/metadata-action@v5
+      with:
+        images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME_SERVER }}
+        tags: |
+          type=ref,event=branch
+          type=ref,event=pr
+          type=semver,pattern={{version}}
+          type=semver,pattern={{major}}.{{minor}}
+          type=sha,prefix={{branch}}-
+
+    - name: Extract metadata for edge image
+      id: meta-edge
+      uses: docker/metadata-action@v5
+      with:
+        images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME_EDGE }}
+        tags: |
+          type=ref,event=branch
+          type=ref,event=pr
+          type=semver,pattern={{version}}
+          type=semver,pattern={{major}}.{{minor}}
+          type=sha,prefix={{branch}}-
+
+    - name: Build and push server image
+      id: build-server
+      uses: docker/build-push-action@v5
+      with:
+        context: .
+        file: ./docker/Dockerfile.server
+        platforms: linux/amd64,linux/arm64
+        push: true
+        tags: ${{ steps.meta-server.outputs.tags }}
+        labels: ${{ steps.meta-server.outputs.labels }}
+        cache-from: type=gha
+        cache-to: type=gha,mode=max
+
+    - name: Build and push edge image
+      id: build-edge
+      uses: docker/build-push-action@v5
+      with:
+        context: .
+        file: ./docker/Dockerfile.edge
+        platforms: linux/amd64,linux/arm64
+        push: true
+        tags: ${{ steps.meta-edge.outputs.tags }}
+        labels: ${{ steps.meta-edge.outputs.labels }}
+        cache-from: type=gha
+        cache-to: type=gha,mode=max
+
+  # Deploy to Staging
+  deploy-staging:
+    name: Deploy to Staging
+    runs-on: ubuntu-latest
+    needs: build
+    if: github.ref == 'refs/heads/develop'
+    environment: staging
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Configure kubectl
+      uses: azure/k8s-set-context@v3
+      with:
+        method: kubeconfig
+        kubeconfig: ${{ secrets.KUBE_CONFIG_STAGING }}
+
+    - name: Deploy to staging namespace
+      run: |
+        # Update image tags in Kubernetes manifests
+        sed -i "s|qflare/server:latest|${{ needs.build.outputs.server-image }}|g" k8s/deployment.yaml
+        sed -i "s|qflare/edge:latest|${{ needs.build.outputs.edge-image }}|g" k8s/deployment.yaml
+        
+        # Apply staging-specific configurations
+        kubectl apply -f k8s/namespace-staging.yaml
+        kubectl apply -f k8s/secrets-staging.yaml
+        kubectl apply -f k8s/configmaps.yaml -n qflare-staging
+        kubectl apply -f k8s/deployment.yaml -n qflare-staging
+        
+        # Wait for deployment to complete
+        kubectl rollout status deployment/qflare-server -n qflare-staging --timeout=300s
+
+    - name: Run smoke tests
+      run: |
+        # Wait for service to be ready
+        sleep 30
+        
+        # Get service endpoint
+        STAGING_URL=$(kubectl get service qflare-server -n qflare-staging -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
+        
+        # Run basic health checks
+        curl -f http://${STAGING_URL}:8000/health || exit 1
+        curl -f http://${STAGING_URL}:9090/metrics || exit 1
+
+  # Deploy to Production
+  deploy-production:
+    name: Deploy to Production
+    runs-on: ubuntu-latest
+    needs: [build, deploy-staging]
+    if: startsWith(github.ref, 'refs/tags/v')
+    environment: production
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Configure kubectl
+      uses: azure/k8s-set-context@v3
+      with:
+        method: kubeconfig
+        kubeconfig: ${{ secrets.KUBE_CONFIG_PRODUCTION }}
+
+    - name: Deploy to production namespace
+      run: |
+        # Update image tags in Kubernetes manifests
+        sed -i "s|qflare/server:latest|${{ needs.build.outputs.server-image }}|g" k8s/deployment.yaml
+        sed -i "s|qflare/edge:latest|${{ needs.build.outputs.edge-image }}|g" k8s/deployment.yaml
+        
+        # Apply production configurations
+        kubectl apply -f k8s/namespace.yaml
+        kubectl apply -f k8s/secrets.yaml
+        kubectl apply -f k8s/configmaps.yaml
+        kubectl apply -f k8s/deployment.yaml
+        
+        # Rolling update with zero downtime
+        kubectl patch deployment qflare-server -p '{"spec":{"strategy":{"type":"RollingUpdate","rollingUpdate":{"maxUnavailable":0,"maxSurge":1}}}}'
+        kubectl rollout status deployment/qflare-server -n qflare --timeout=600s
+
+    - name: Post-deployment verification
+      run: |
+        # Verify all pods are running
+        kubectl get pods -n qflare
+        
+        # Run production health checks
+        PRODUCTION_URL=$(kubectl get service qflare-server -n qflare -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
+        curl -f https://${PRODUCTION_URL}/health || exit 1
+        curl -f http://${PRODUCTION_URL}:9090/metrics || exit 1
+        
+        # Check federated learning endpoint
+        curl -f https://${PRODUCTION_URL}/api/v1/fl/status || exit 1
+
+    - name: Create GitHub Release
+      uses: actions/create-release@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        tag_name: ${{ github.ref }}
+        release_name: QFLARE ${{ github.ref }}
+        body: |
+          ## QFLARE Release ${{ github.ref }}
+          
+          ### Features
+          - Complete federated learning platform with TEE security
+          - Intel SGX and AMD SEV support
+          - Post-quantum cryptography
+          - Advanced FL algorithms (FedProx, FedBN, Personalized FL)
+          - Production monitoring and metrics
+          
+          ### Docker Images
+          - Server: ${{ needs.build.outputs.server-image }}
+          - Edge: ${{ needs.build.outputs.edge-image }}
+          
+          ### Deployment
+          Deployed to production with zero downtime rolling update.
+        draft: false
+        prerelease: ${{ contains(github.ref, 'alpha') || contains(github.ref, 'beta') || contains(github.ref, 'rc') }}
+
+  # Performance Testing
+  performance:
+    name: Performance Testing
+    runs-on: ubuntu-latest
+    needs: deploy-staging
+    if: github.ref == 'refs/heads/develop'
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Install k6
+      run: |
+        sudo apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys C5AD17C747E3415A3642D57D77C6C491D6AC1D69
+        echo "deb https://dl.k6.io/deb stable main" | sudo tee /etc/apt/sources.list.d/k6.list
+        sudo apt-get update
+        sudo apt-get install k6
+
+    - name: Run performance tests
+      run: |
+        # Get staging endpoint
+        STAGING_URL=$(kubectl get service qflare-server -n qflare-staging -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
+        
+        # Run k6 performance tests
+        k6 run -e BASE_URL=http://${STAGING_URL}:8000 tests/performance/load_test.js
+        k6 run -e BASE_URL=http://${STAGING_URL}:8000 tests/performance/stress_test.js
+
+    - name: Upload performance results
+      uses: actions/upload-artifact@v3
+      with:
+        name: performance-results
+        path: performance-results.json

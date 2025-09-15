@@ -1,0 +1,107 @@
+# Multi-stage Dockerfile for QFLARE Edge Node
+# Optimized for edge devices with resource constraints
+
+FROM python:3.11-slim AS base
+
+# Install minimal system dependencies
+RUN apt-get update && apt-get install -y \
+    build-essential \
+    libssl-dev \
+    libffi-dev \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
+
+# Stage 2: Python dependencies
+FROM base AS python-deps
+
+# Set Python environment
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV PYTHONUNBUFFERED=1
+ENV PYTHONPATH=/app
+
+# Install Python dependencies
+COPY edge_node/requirements.txt /tmp/
+
+RUN pip install --no-cache-dir --upgrade pip \
+    && pip install --no-cache-dir -r /tmp/requirements.txt \
+    && pip install --no-cache-dir \
+        torch torchvision --index-url https://download.pytorch.org/whl/cpu \
+        cryptography \
+        requests \
+        pyyaml
+
+# Stage 3: liboqs for post-quantum crypto
+FROM python-deps AS liboqs-builder
+
+# Install build dependencies
+RUN apt-get update && apt-get install -y \
+    cmake \
+    ninja-build \
+    git \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copy and build liboqs
+COPY liboqs/ /tmp/liboqs/
+COPY liboqs-python/ /tmp/liboqs-python/
+
+RUN cd /tmp/liboqs \
+    && mkdir build \
+    && cd build \
+    && cmake -GNinja \
+        -DCMAKE_INSTALL_PREFIX=/usr/local \
+        -DOQS_BUILD_ONLY_LIB=ON \
+        -DOQS_USE_OPENSSL=ON \
+        -DOQS_MINIMAL_BUILD=ON \
+        .. \
+    && ninja \
+    && ninja install \
+    && ldconfig
+
+# Install liboqs-python
+RUN cd /tmp/liboqs-python \
+    && pip install .
+
+# Stage 4: Production edge node
+FROM python-deps AS production
+
+# Copy liboqs from builder
+COPY --from=liboqs-builder /usr/local/lib/liboqs* /usr/local/lib/
+COPY --from=liboqs-builder /usr/local/include/oqs/ /usr/local/include/oqs/
+RUN ldconfig
+
+# Create non-root user
+RUN groupadd -r qflare && useradd -r -g qflare qflare
+
+# Set working directory
+WORKDIR /app
+
+# Copy application code
+COPY edge_node/ ./edge_node/
+COPY models/ ./models/
+COPY config/ ./config/
+
+# Create necessary directories
+RUN mkdir -p /app/data /app/logs /app/models \
+    && chown -R qflare:qflare /app
+
+# Copy configuration
+COPY docker/edge-config.yaml /app/config/edge-config.yaml
+
+# Set environment variables
+ENV QFLARE_CONFIG_PATH=/app/config/edge-config.yaml
+ENV QFLARE_LOG_LEVEL=INFO
+ENV QFLARE_DATA_PATH=/app/data
+ENV QFLARE_DEVICE_TYPE=edge
+
+# Health check
+HEALTHCHECK --interval=60s --timeout=10s --start-period=30s --retries=3 \
+    CMD python3 -c "import requests; requests.get('http://localhost:8001/health')" || exit 1
+
+# Switch to non-root user
+USER qflare
+
+# Expose port
+EXPOSE 8001
+
+# Start the edge node
+CMD ["python3", "-m", "edge_node.main"]

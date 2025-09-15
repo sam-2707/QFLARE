@@ -1,0 +1,469 @@
+# QFLARE Kubernetes ConfigMaps
+# Contains non-sensitive configuration data
+
+---
+# Prometheus Configuration
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: prometheus-config
+  namespace: qflare
+data:
+  prometheus.yml: |
+    global:
+      scrape_interval: 15s
+      evaluation_interval: 15s
+
+    rule_files:
+      - "/etc/prometheus/rules/*.yml"
+
+    scrape_configs:
+      # QFLARE Server Metrics
+      - job_name: 'qflare-server'
+        static_configs:
+          - targets: ['qflare-server:9090']
+        metrics_path: '/metrics'
+        scrape_interval: 30s
+        scrape_timeout: 10s
+
+      # QFLARE Edge Nodes
+      - job_name: 'qflare-edge'
+        kubernetes_sd_configs:
+          - role: pod
+            namespaces:
+              names:
+                - qflare
+        relabel_configs:
+          - source_labels: [__meta_kubernetes_pod_label_app]
+            action: keep
+            regex: qflare-edge
+          - source_labels: [__meta_kubernetes_pod_ip]
+            target_label: __address__
+            replacement: ${1}:8001
+
+      # Kubernetes Components
+      - job_name: 'kubernetes-pods'
+        kubernetes_sd_configs:
+          - role: pod
+            namespaces:
+              names:
+                - qflare
+        relabel_configs:
+          - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_scrape]
+            action: keep
+            regex: true
+          - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_path]
+            action: replace
+            target_label: __metrics_path__
+            regex: (.+)
+          - source_labels: [__address__, __meta_kubernetes_pod_annotation_prometheus_io_port]
+            action: replace
+            regex: ([^:]+)(?::\d+)?;(\d+)
+            replacement: $1:$2
+            target_label: __address__
+
+      # Node Exporter
+      - job_name: 'node-exporter'
+        kubernetes_sd_configs:
+          - role: node
+        relabel_configs:
+          - source_labels: [__address__]
+            regex: '(.*):10250'
+            replacement: '${1}:9100'
+            target_label: __address__
+
+    alerting:
+      alertmanagers:
+        - static_configs:
+            - targets:
+              - alertmanager:9093
+
+  alert_rules.yml: |
+    groups:
+    - name: qflare.rules
+      rules:
+      - alert: QFLAREServerDown
+        expr: up{job="qflare-server"} == 0
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "QFLARE Server is down"
+          description: "QFLARE Server has been down for more than 5 minutes."
+
+      - alert: QFLAREHighCPUUsage
+        expr: rate(process_cpu_seconds_total{job="qflare-server"}[5m]) * 100 > 80
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High CPU usage on QFLARE Server"
+          description: "CPU usage is above 80% for more than 10 minutes."
+
+      - alert: QFLAREHighMemoryUsage
+        expr: process_resident_memory_bytes{job="qflare-server"} / 1024 / 1024 > 2048
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High memory usage on QFLARE Server"
+          description: "Memory usage is above 2GB for more than 10 minutes."
+
+      - alert: QFLAREFederatedLearningFailure
+        expr: qflare_fl_training_failures_total > 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Federated Learning training failure"
+          description: "Federated Learning training has failed."
+
+      - alert: QFLARETEEFailure
+        expr: qflare_tee_operations_failed_total > 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "TEE operation failure"
+          description: "Trusted Execution Environment operations are failing."
+
+      - alert: QFLAREEdgeNodeDisconnected
+        expr: qflare_edge_nodes_connected < qflare_edge_nodes_registered * 0.5
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Many edge nodes disconnected"
+          description: "More than 50% of registered edge nodes are disconnected."
+
+---
+# Grafana Configuration
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-config
+  namespace: qflare
+data:
+  datasources.yml: |
+    apiVersion: 1
+    datasources:
+      - name: Prometheus
+        type: prometheus
+        access: proxy
+        url: http://prometheus:9090
+        isDefault: true
+        editable: true
+      - name: Loki
+        type: loki
+        access: proxy
+        url: http://loki:3100
+        editable: true
+
+  dashboards.yml: |
+    apiVersion: 1
+    providers:
+      - name: 'default'
+        orgId: 1
+        folder: ''
+        type: file
+        disableDeletion: false
+        updateIntervalSeconds: 10
+        allowUiUpdates: true
+        options:
+          path: /var/lib/grafana/dashboards
+
+  qflare-dashboard.json: |
+    {
+      "dashboard": {
+        "id": null,
+        "title": "QFLARE Federated Learning Platform",
+        "tags": ["qflare", "federated-learning", "tee"],
+        "style": "dark",
+        "timezone": "browser",
+        "panels": [
+          {
+            "id": 1,
+            "title": "System Overview",
+            "type": "stat",
+            "targets": [
+              {
+                "expr": "up{job=\"qflare-server\"}",
+                "legendFormat": "Server Status"
+              }
+            ],
+            "fieldConfig": {
+              "defaults": {
+                "mappings": [
+                  {
+                    "options": {
+                      "0": {"text": "DOWN", "color": "red"},
+                      "1": {"text": "UP", "color": "green"}
+                    },
+                    "type": "value"
+                  }
+                ]
+              }
+            },
+            "gridPos": {"h": 8, "w": 12, "x": 0, "y": 0}
+          },
+          {
+            "id": 2,
+            "title": "Federated Learning Rounds",
+            "type": "graph",
+            "targets": [
+              {
+                "expr": "qflare_fl_rounds_completed_total",
+                "legendFormat": "Completed Rounds"
+              }
+            ],
+            "gridPos": {"h": 8, "w": 12, "x": 12, "y": 0}
+          },
+          {
+            "id": 3,
+            "title": "Active Edge Nodes",
+            "type": "stat",
+            "targets": [
+              {
+                "expr": "qflare_edge_nodes_connected",
+                "legendFormat": "Connected Nodes"
+              }
+            ],
+            "gridPos": {"h": 8, "w": 6, "x": 0, "y": 8}
+          },
+          {
+            "id": 4,
+            "title": "TEE Operations",
+            "type": "graph",
+            "targets": [
+              {
+                "expr": "rate(qflare_tee_operations_total[5m])",
+                "legendFormat": "TEE Ops/sec"
+              }
+            ],
+            "gridPos": {"h": 8, "w": 18, "x": 6, "y": 8}
+          }
+        ],
+        "time": {
+          "from": "now-1h",
+          "to": "now"
+        },
+        "refresh": "30s"
+      }
+    }
+
+---
+# QFLARE Application Configuration
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: qflare-config
+  namespace: qflare
+data:
+  server-config.yaml: |
+    qflare:
+      server:
+        host: "0.0.0.0"
+        port: 8000
+        ssl_port: 8443
+        workers: 4
+      
+      database:
+        pool_size: 20
+        max_overflow: 30
+        pool_timeout: 30
+        pool_recycle: 3600
+      
+      redis:
+        max_connections: 50
+        health_check_interval: 30
+      
+      tee:
+        preferred_type: "auto"
+        sgx:
+          mode: "HW"
+        sev:
+          vm_memory: "2G"
+          vcpus: 2
+      
+      federated_learning:
+        training:
+          min_clients: 2
+          max_clients: 100
+          rounds: 1000
+          client_fraction: 0.3
+          local_epochs: 5
+          batch_size: 32
+          learning_rate: 0.01
+        
+        algorithms:
+          default: "fedavg"
+          available:
+            - "fedavg"
+            - "fedprox"
+            - "fedbn"
+            - "per_fedavg"
+            - "fedper"
+            - "pfnm"
+            - "fedrep"
+      
+      security:
+        pqc:
+          enabled: true
+          signature_algorithm: "Dilithium3"
+          kem_algorithm: "Kyber768"
+          key_rotation_interval: 86400
+        
+        device_auth:
+          token_expiration: 604800
+          max_devices_per_user: 10
+          enrollment_required: true
+      
+      monitoring:
+        metrics:
+          enabled: true
+          port: 9090
+          path: "/metrics"
+          collection_interval: 30
+        
+        logging:
+          level: "INFO"
+          format: "json"
+
+  edge-config.yaml: |
+    qflare:
+      edge_node:
+        device_type: "edge"
+        communication:
+          heartbeat_interval: 30
+          registration_retry_interval: 60
+          max_retries: 5
+          timeout: 30
+      
+      training:
+        local:
+          batch_size: 16
+          epochs: 5
+          learning_rate: 0.01
+          optimizer: "sgd"
+        
+        data:
+          dataset: "cifar10"
+          validation_split: 0.2
+          shuffle: true
+      
+      security:
+        pqc:
+          enabled: true
+          signature_algorithm: "Dilithium3"
+          kem_algorithm: "Kyber768"
+        
+        communication:
+          tls_verify: true
+      
+      resources:
+        memory:
+          max_model_size: "500MB"
+          garbage_collection_interval: 300
+        
+        cpu:
+          max_utilization: 0.8
+          training_threads: 2
+      
+      monitoring:
+        metrics:
+          enabled: true
+          collection_interval: 60
+        
+        logging:
+          level: "INFO"
+          format: "json"
+
+---
+# Nginx Configuration
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: nginx-config
+  namespace: qflare
+data:
+  nginx.conf: |
+    user nginx;
+    worker_processes auto;
+    error_log /var/log/nginx/error.log warn;
+    pid /var/run/nginx.pid;
+
+    events {
+        worker_connections 1024;
+        use epoll;
+        multi_accept on;
+    }
+
+    http {
+        include /etc/nginx/mime.types;
+        default_type application/octet-stream;
+
+        log_format main '$remote_addr - $remote_user [$time_local] "$request" '
+                        '$status $body_bytes_sent "$http_referer" '
+                        '"$http_user_agent" "$http_x_forwarded_for"';
+
+        access_log /var/log/nginx/access.log main;
+
+        sendfile on;
+        tcp_nopush on;
+        tcp_nodelay on;
+        keepalive_timeout 65;
+        types_hash_max_size 2048;
+
+        gzip on;
+        gzip_vary on;
+        gzip_proxied any;
+        gzip_comp_level 6;
+        gzip_types
+            text/plain
+            text/css
+            text/xml
+            text/javascript
+            application/json
+            application/javascript
+            application/xml+rss
+            application/atom+xml
+            image/svg+xml;
+
+        upstream qflare_backend {
+            least_conn;
+            server qflare-server:8443 max_fails=3 fail_timeout=30s;
+        }
+
+        server {
+            listen 80;
+            server_name _;
+            return 301 https://$host$request_uri;
+        }
+
+        server {
+            listen 443 ssl http2;
+            server_name _;
+
+            ssl_certificate /etc/nginx/certs/tls.crt;
+            ssl_certificate_key /etc/nginx/certs/tls.key;
+            ssl_protocols TLSv1.2 TLSv1.3;
+            ssl_ciphers ECDHE-RSA-AES128-GCM-SHA256:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-RSA-AES128-SHA256:ECDHE-RSA-AES256-SHA384;
+            ssl_prefer_server_ciphers off;
+
+            location / {
+                proxy_pass https://qflare_backend;
+                proxy_set_header Host $host;
+                proxy_set_header X-Real-IP $remote_addr;
+                proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+                proxy_set_header X-Forwarded-Proto $scheme;
+                proxy_ssl_verify off;
+            }
+
+            location /metrics {
+                proxy_pass http://qflare-server:9090;
+                proxy_set_header Host $host;
+                proxy_set_header X-Real-IP $remote_addr;
+                proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            }
+        }
+    }

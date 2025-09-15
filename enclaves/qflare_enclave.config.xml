@@ -1,0 +1,44 @@
+# Intel SGX Enclave Configuration File
+# This file specifies the metadata for the QFlare SGX enclave
+
+ProdID=1
+ISVSVN=1
+Debug=1
+
+# Stack and heap configuration
+StackMaxSize=0x40000      # 256KB stack
+HeapMaxSize=0x8000000     # 128MB heap for large models
+
+# Threading support
+TCSNum=10                 # Maximum 10 threads
+TCSPolicy=1               # Bound threading policy
+
+# Enclave attributes
+DisableDebug=0            # Allow debug (set to 1 for production)
+DisableWritableMode=0     # Allow writable mode for development
+EnablePaging=0            # Disable paging for performance
+
+# Enclave signing
+# In production, use a proper private key file
+MiscSelect=0
+MiscMask=0xFFFFFFFF
+AttributeMask=0xFFFFFFFFFFFFFFFB
+AttributeXFRMMask=0x0
+
+# Memory layout
+ReservedMemMinSize=0x1000000    # 16MB reserved memory
+ReservedMemMaxSize=0x4000000    # 64MB max reserved memory
+
+# Import libraries
+ImportLibs=sgx_tcrypto.lib
+ImportLibs=sgx_tservice.lib
+ImportLibs=sgx_tstdc.lib
+
+# Enclave capabilities
+EnableSecureMemory=1      # Enable secure memory allocation
+EnableAttestation=1       # Enable remote attestation
+EnableSealing=1          # Enable data sealing
+
+# Security configurations
+DisableOCallReturn=0     # Allow OCALL returns
+EnableDebugEnclave=0     # Disable debug features in production

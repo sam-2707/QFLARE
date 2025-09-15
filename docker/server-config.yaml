@@ -1,0 +1,185 @@
+# QFLARE Server Docker Configuration
+qflare:
+  # Server Configuration
+  server:
+    host: "0.0.0.0"
+    port: 8000
+    ssl_port: 8443
+    workers: 4
+    
+    # Security Configuration
+    ssl:
+      enabled: true
+      cert_file: "/app/certs/server.crt"
+      key_file: "/app/certs/server.key"
+      ca_file: "/app/certs/ca.crt"
+    
+    # JWT Configuration
+    jwt:
+      secret_key: "${QFLARE_JWT_SECRET}"
+      algorithm: "HS256"
+      expiration: 3600
+    
+    # CORS Configuration
+    cors:
+      enabled: true
+      origins:
+        - "https://*.qflare.local"
+        - "https://qflare-dashboard.local"
+      methods: ["GET", "POST", "PUT", "DELETE"]
+      headers: ["Authorization", "Content-Type"]
+
+  # Database Configuration
+  database:
+    url: "${DATABASE_URL:-postgresql://qflare:${POSTGRES_PASSWORD}@postgres:5432/qflare_db}"
+    echo: false
+    pool_size: 20
+    max_overflow: 30
+    pool_timeout: 30
+    pool_recycle: 3600
+
+  # Redis Configuration
+  redis:
+    url: "${REDIS_URL:-redis://redis:6379/0}"
+    max_connections: 50
+    health_check_interval: 30
+
+  # TEE Configuration
+  tee:
+    preferred_type: "auto"  # auto, sgx, sev, mock
+    sgx:
+      mode: "${QFLARE_SGX_MODE:-HW}"  # HW, SIM
+      enclave_path: "/app/server/enclave/sgx/qflare_enclave.signed.so"
+      spid: "${SGX_SPID}"
+      ias_key: "${SGX_IAS_KEY}"
+    sev:
+      vm_memory: "2G"
+      vcpus: 2
+      attestation_server: "${SEV_ATTESTATION_SERVER}"
+    mock:
+      simulate_latency: true
+      latency_ms: 10
+
+  # Federated Learning Configuration
+  federated_learning:
+    # Training Parameters
+    training:
+      min_clients: 2
+      max_clients: 100
+      rounds: 1000
+      client_fraction: 0.3
+      local_epochs: 5
+      batch_size: 32
+      learning_rate: 0.01
+    
+    # Algorithm Configuration
+    algorithms:
+      default: "fedavg"
+      available:
+        - "fedavg"
+        - "fedprox"
+        - "fedbn"
+        - "per_fedavg"
+        - "fedper"
+        - "pfnm"
+        - "fedrep"
+        - "fedopt"
+        - "fedadagrad"
+        - "fedadam"
+        - "fedyogi"
+    
+    # Model Configuration
+    models:
+      default_architecture: "cnn"
+      compression:
+        enabled: true
+        algorithm: "quantization"
+        level: 8
+      
+    # Aggregation Configuration
+    aggregation:
+      method: "weighted_average"
+      byzantine_tolerance: true
+      max_byzantine_ratio: 0.3
+      robustness_algorithm: "krum"
+
+  # Security Configuration
+  security:
+    # Post-Quantum Cryptography
+    pqc:
+      enabled: true
+      signature_algorithm: "Dilithium3"
+      kem_algorithm: "Kyber768"
+      key_rotation_interval: 86400  # 24 hours
+    
+    # Device Authentication
+    device_auth:
+      token_expiration: 604800  # 7 days
+      max_devices_per_user: 10
+      enrollment_required: true
+    
+    # Rate Limiting
+    rate_limiting:
+      enabled: true
+      requests_per_minute: 100
+      burst_size: 20
+
+  # Monitoring Configuration
+  monitoring:
+    # Metrics Collection
+    metrics:
+      enabled: true
+      port: 9090
+      path: "/metrics"
+      collection_interval: 30
+    
+    # Health Checks
+    health:
+      enabled: true
+      endpoint: "/health"
+      detailed_endpoint: "/health/detailed"
+      check_interval: 60
+    
+    # Logging
+    logging:
+      level: "${QFLARE_LOG_LEVEL:-INFO}"
+      format: "json"
+      file: "/app/logs/qflare-server.log"
+      rotation:
+        max_size: "100MB"
+        backup_count: 10
+      
+      # Component-specific logging
+      components:
+        tee: "INFO"
+        federated_learning: "INFO"
+        security: "WARNING"
+        database: "WARNING"
+
+  # Storage Configuration
+  storage:
+    # Model Storage
+    models:
+      path: "/app/data/models"
+      max_versions: 50
+      compression: true
+    
+    # Data Storage
+    data:
+      path: "/app/data"
+      max_size: "10GB"
+      cleanup_interval: 3600
+    
+    # Backup Configuration
+    backup:
+      enabled: true
+      interval: 21600  # 6 hours
+      retention_days: 30
+      storage_backend: "local"  # local, s3, gcs
+
+  # Development Configuration
+  development:
+    debug: false
+    auto_reload: false
+    profiling: false
+    test_mode: false

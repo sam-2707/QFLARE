@@ -1,3 +1,7 @@
-# __init__.py
+"""
+Models package for QFLARE federated learning.
+Contains model definitions and utilities.
+"""
 
-This is a placeholder for `__init__.py`.
+__version__ = "1.0.0"
+__all__ = ["model_utils", "cnn_model"]

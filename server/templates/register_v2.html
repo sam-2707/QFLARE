@@ -12,12 +12,15 @@
             <h1>🔐 Interactive Device Enrollment</h1>
             <p>Generate Post-Quantum keys for a new device.</p>
         </div>
+        <div style="margin-top: 2em;">
+            <a href="/enroll_dashboard" class="submit-btn" style="text-align:center;display:block;">Go to Device Enrollment Dashboard</a>
+        </div>
 
         <div class="card">
             <h2>Step 1: Generate Quantum Keys</h2>
             <p style="margin-bottom: 20px;">Click the button below to generate a new set of quantum-resistant keys for your device. These keys are required for the secure enrollment process.</p>
             
-            <button id="generateKeysBtn" class="submit-btn">Generate New Keys</button>
+            <button id="generate-keys-btn" class="submit-btn">Generate New Keys</button>
 
             <div id="loadingSpinner" style="display: none; text-align: center; padding: 20px;">
                 <p>Generating keys...</p>
@@ -37,8 +40,12 @@
                     <label>Signature Public Key (Dilithium2):</label>
                     <textarea id="sigKey" rows="4" readonly></textarea>
                 </div>
+                <div class="form-group">
+                    <label>Enrollment Token:</label>
+                    <textarea id="enrollToken" rows="2" readonly></textarea>
+                </div>
                 <div class="alert alert-success">
-                    <strong>Next Step:</strong> Use these keys with an enrollment token to register your device via the `/api/enroll` endpoint.
+                    <strong>Next Step:</strong> Use these keys and the enrollment token to register your device via the <a href="/enroll_dashboard">Device Enrollment Dashboard</a> or `/api/enroll` endpoint.
                 </div>
             </div>
         </div>

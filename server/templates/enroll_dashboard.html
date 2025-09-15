@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>QFLARE Device Enrollment</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <div class="container">
+        <h2>Device Enrollment Dashboard</h2>
+        <form id="enrollForm">
+            <label for="deviceId">Device ID:</label>
+            <input type="text" id="deviceId" name="deviceId" required>
+
+            <label for="kemKey">KEM Public Key:</label>
+            <textarea id="kemKey" name="kemKey" rows="3" required></textarea>
+
+            <label for="sigKey">Signature Public Key:</label>
+            <textarea id="sigKey" name="sigKey" rows="3" required></textarea>
+
+            <label for="enrollToken">Enrollment Token:</label>
+            <input type="text" id="enrollToken" name="enrollToken" required>
+
+            <button type="submit" class="submit-btn">Enroll Device</button>
+        </form>
+        <div id="enrollResult"></div>
+    </div>
+    <script src="/static/enroll.js"></script>
+</body>
+</html>

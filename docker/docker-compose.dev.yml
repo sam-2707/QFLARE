@@ -1,0 +1,133 @@
+# QFLARE Development Environment
+# Simplified setup for development and testing
+
+version: '3.8'
+
+networks:
+  qflare-dev:
+    driver: bridge
+
+volumes:
+  postgres-dev-data:
+  redis-dev-data:
+  qflare-dev-data:
+
+services:
+  # Development Database
+  postgres-dev:
+    image: postgres:15-alpine
+    container_name: qflare-postgres-dev
+    environment:
+      POSTGRES_DB: qflare_dev
+      POSTGRES_USER: qflare
+      POSTGRES_PASSWORD: qflare_dev_password
+    volumes:
+      - postgres-dev-data:/var/lib/postgresql/data
+    networks:
+      - qflare-dev
+    ports:
+      - "5433:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U qflare -d qflare_dev"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis-dev:
+    image: redis:7-alpine
+    container_name: qflare-redis-dev
+    volumes:
+      - redis-dev-data:/data
+    networks:
+      - qflare-dev
+    ports:
+      - "6380:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # QFLARE Server Development
+  qflare-server-dev:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.server
+      target: python-deps  # Skip SGX building for development
+    container_name: qflare-server-dev
+    depends_on:
+      postgres-dev:
+        condition: service_healthy
+      redis-dev:
+        condition: service_healthy
+    environment:
+      - DATABASE_URL=postgresql://qflare:qflare_dev_password@postgres-dev:5432/qflare_dev
+      - REDIS_URL=redis://redis-dev:6379/0
+      - QFLARE_JWT_SECRET=dev-secret-key-change-in-production
+      - QFLARE_LOG_LEVEL=DEBUG
+      - QFLARE_SGX_MODE=SIM  # Simulation mode for development
+    volumes:
+      - ..:/app
+      - qflare-dev-data:/app/data
+    networks:
+      - qflare-dev
+    ports:
+      - "8000:8000"
+      - "8443:8443"
+      - "9090:9090"
+    command: python3 -m server.main --dev
+    restart: unless-stopped
+
+  # Development Edge Node
+  qflare-edge-dev:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.edge
+      target: production
+    container_name: qflare-edge-dev
+    depends_on:
+      - qflare-server-dev
+    environment:
+      - QFLARE_DEVICE_ID=dev-edge-001
+      - QFLARE_DEVICE_TYPE=development
+      - QFLARE_SERVER_URL=http://qflare-server-dev:8000
+      - QFLARE_LOG_LEVEL=DEBUG
+    volumes:
+      - ..:/app
+      - ../docker/dev-edge-data:/app/data
+    networks:
+      - qflare-dev
+    ports:
+      - "8001:8001"
+    command: python3 -m edge_node.main --dev
+    restart: unless-stopped
+
+  # Development Monitoring
+  prometheus-dev:
+    image: prom/prometheus:latest
+    container_name: qflare-prometheus-dev
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.enable-lifecycle'
+    volumes:
+      - ./docker/prometheus/prometheus-dev.yml:/etc/prometheus/prometheus.yml:ro
+    networks:
+      - qflare-dev
+    ports:
+      - "9091:9090"
+
+  grafana-dev:
+    image: grafana/grafana:latest
+    container_name: qflare-grafana-dev
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_USERS_ALLOW_SIGN_UP=false
+    volumes:
+      - ./docker/grafana/provisioning-dev:/etc/grafana/provisioning:ro
+    networks:
+      - qflare-dev
+    ports:
+      - "3000:3000"
+    depends_on:
+      - prometheus-dev

@@ -1,0 +1,280 @@
+/*
+ * QFlare Enclave Definition Language (EDL) File
+ * 
+ * This file defines the interface between the untrusted application and
+ * the trusted SGX enclave for the QFlare federated learning system.
+ * 
+ * ECALLs: Functions called from untrusted code into the enclave
+ * OCALLs: Functions called from the enclave to untrusted code
+ */
+
+enclave {
+    from "sgx_tae_service.edl" import *;
+    from "sgx_tstdc.edl" import *;
+    
+    include "sgx_key_exchange.h"
+    include "sgx_trts.h"
+    include "sgx_tcrypto.h"
+    include "sgx_tseal.h"
+    
+    /* Import the required header files for the enclave */
+    
+    trusted {
+        /*
+         * Initialize the secure enclave for federated learning
+         * 
+         * @param poison_threshold: Threshold for detecting poisoned updates (0.0-1.0)
+         * @param byzantine_tolerance: Fraction of Byzantine clients to tolerate (0.0-1.0)
+         * @param max_model_size: Maximum size of model in bytes
+         * @return: SGX_SUCCESS on success, error code otherwise
+         */
+        public sgx_status_t ecall_initialize_enclave(
+            float poison_threshold,
+            float byzantine_tolerance,
+            uint32_t max_model_size
+        );
+        
+        /*
+         * Generate enclave quote for remote attestation
+         * 
+         * @param report: Output buffer for SGX report
+         * @param quote: Output buffer for SGX quote
+         * @param quote_size: Input/output parameter for quote buffer size
+         * @return: SGX_SUCCESS on success, error code otherwise
+         */
+        public sgx_status_t ecall_get_quote(
+            [out] sgx_report_t* report,
+            [out, size=*quote_size] sgx_quote_t* quote,
+            [in, out] uint32_t* quote_size
+        );
+        
+        /*
+         * Perform secure model aggregation within the enclave
+         * 
+         * @param updates_data: Serialized client model updates
+         * @param updates_size: Size of updates data in bytes
+         * @param global_weights: Current global model weights (optional)
+         * @param global_weights_size: Size of global weights in bytes
+         * @param result_buffer: Output buffer for aggregation result
+         * @param result_buffer_size: Size of result buffer
+         * @param actual_result_size: Actual size of result data
+         * @return: SGX_SUCCESS on success, error code otherwise
+         */
+        public sgx_status_t ecall_secure_aggregate(
+            [in, size=updates_size] const uint8_t* updates_data,
+            size_t updates_size,
+            [in, size=global_weights_size] const uint8_t* global_weights,
+            size_t global_weights_size,
+            [out, size=result_buffer_size] uint8_t* result_buffer,
+            size_t result_buffer_size,
+            [out] size_t* actual_result_size
+        );
+        
+        /*
+         * Seal enclave state for persistent storage
+         * 
+         * @param sealed_data: Output buffer for sealed data
+         * @param sealed_data_size: Size of sealed data buffer
+         * @param actual_sealed_size: Actual size of sealed data
+         * @return: SGX_SUCCESS on success, error code otherwise
+         */
+        public sgx_status_t ecall_seal_state(
+            [out, size=sealed_data_size] uint8_t* sealed_data,
+            uint32_t sealed_data_size,
+            [out] uint32_t* actual_sealed_size
+        );
+        
+        /*
+         * Unseal enclave state from persistent storage
+         * 
+         * @param sealed_data: Input buffer containing sealed data
+         * @param sealed_data_size: Size of sealed data
+         * @return: SGX_SUCCESS on success, error code otherwise
+         */
+        public sgx_status_t ecall_unseal_state(
+            [in, size=sealed_data_size] const uint8_t* sealed_data,
+            uint32_t sealed_data_size
+        );
+        
+        /*
+         * Get enclave status and performance metrics
+         * 
+         * @param status_buffer: Output buffer for status information
+         * @param buffer_size: Size of status buffer
+         * @param actual_size: Actual size of status data
+         * @return: SGX_SUCCESS on success, error code otherwise
+         */
+        public sgx_status_t ecall_get_status(
+            [out, size=buffer_size] uint8_t* status_buffer,
+            size_t buffer_size,
+            [out] size_t* actual_size
+        );
+        
+        /*
+         * Securely generate random numbers for cryptographic operations
+         * 
+         * @param random_buffer: Output buffer for random data
+         * @param buffer_size: Size of random buffer
+         * @return: SGX_SUCCESS on success, error code otherwise
+         */
+        public sgx_status_t ecall_generate_random(
+            [out, size=buffer_size] uint8_t* random_buffer,
+            size_t buffer_size
+        );
+        
+        /*
+         * Perform secure key derivation for client authentication
+         * 
+         * @param input_key: Input key material
+         * @param input_size: Size of input key
+         * @param salt: Salt for key derivation
+         * @param salt_size: Size of salt
+         * @param derived_key: Output buffer for derived key
+         * @param key_size: Size of derived key
+         * @return: SGX_SUCCESS on success, error code otherwise
+         */
+        public sgx_status_t ecall_derive_key(
+            [in, size=input_size] const uint8_t* input_key,
+            size_t input_size,
+            [in, size=salt_size] const uint8_t* salt,
+            size_t salt_size,
+            [out, size=key_size] uint8_t* derived_key,
+            size_t key_size
+        );
+        
+        /*
+         * Verify client attestation and establish secure channel
+         * 
+         * @param client_quote: Client's SGX quote
+         * @param quote_size: Size of client quote
+         * @param shared_key: Output buffer for shared key
+         * @param key_size: Size of shared key buffer
+         * @param verification_result: Result of verification
+         * @return: SGX_SUCCESS on success, error code otherwise
+         */
+        public sgx_status_t ecall_verify_client_attestation(
+            [in, size=quote_size] const uint8_t* client_quote,
+            size_t quote_size,
+            [out, size=key_size] uint8_t* shared_key,
+            size_t key_size,
+            [out] uint32_t* verification_result
+        );
+        
+        /*
+         * Cleanup and destroy enclave state
+         */
+        public void ecall_cleanup();
+    };
+    
+    untrusted {
+        /*
+         * Log messages from the enclave (for debugging)
+         * 
+         * @param level: Log level (0=ERROR, 1=WARN, 2=INFO, 3=DEBUG)
+         * @param message: Log message string
+         */
+        void ocall_log_message(
+            uint32_t level,
+            [in, string] const char* message
+        );
+        
+        /*
+         * Get current timestamp from untrusted environment
+         * 
+         * @param timestamp: Output parameter for timestamp
+         * @return: 0 on success, -1 on error
+         */
+        int ocall_get_timestamp([out] uint64_t* timestamp);
+        
+        /*
+         * Save sealed data to persistent storage
+         * 
+         * @param filename: Filename for sealed data
+         * @param data: Sealed data buffer
+         * @param data_size: Size of sealed data
+         * @return: 0 on success, -1 on error
+         */
+        int ocall_save_sealed_data(
+            [in, string] const char* filename,
+            [in, size=data_size] const uint8_t* data,
+            size_t data_size
+        );
+        
+        /*
+         * Load sealed data from persistent storage
+         * 
+         * @param filename: Filename of sealed data
+         * @param data: Output buffer for sealed data
+         * @param buffer_size: Size of data buffer
+         * @param actual_size: Actual size of loaded data
+         * @return: 0 on success, -1 on error
+         */
+        int ocall_load_sealed_data(
+            [in, string] const char* filename,
+            [out, size=buffer_size] uint8_t* data,
+            size_t buffer_size,
+            [out] size_t* actual_size
+        );
+        
+        /*
+         * Perform network communication with remote attestation service
+         * 
+         * @param url: URL for attestation service
+         * @param request_data: Request data to send
+         * @param request_size: Size of request data
+         * @param response_data: Output buffer for response
+         * @param response_buffer_size: Size of response buffer
+         * @param actual_response_size: Actual size of response
+         * @return: HTTP status code, or -1 on error
+         */
+        int ocall_attestation_request(
+            [in, string] const char* url,
+            [in, size=request_size] const uint8_t* request_data,
+            size_t request_size,
+            [out, size=response_buffer_size] uint8_t* response_data,
+            size_t response_buffer_size,
+            [out] size_t* actual_response_size
+        );
+        
+        /*
+         * Allocate memory in untrusted heap (for large data transfers)
+         * 
+         * @param size: Size of memory to allocate
+         * @return: Pointer to allocated memory, or NULL on failure
+         */
+        [user_check] void* ocall_malloc(size_t size);
+        
+        /*
+         * Free memory in untrusted heap
+         * 
+         * @param ptr: Pointer to memory to free
+         */
+        void ocall_free([user_check] void* ptr);
+        
+        /*
+         * Send performance metrics to monitoring system
+         * 
+         * @param metrics_data: JSON-formatted metrics data
+         * @param data_size: Size of metrics data
+         * @return: 0 on success, -1 on error
+         */
+        int ocall_send_metrics(
+            [in, size=data_size] const uint8_t* metrics_data,
+            size_t data_size
+        );
+        
+        /*
+         * Trigger security alert for detected attacks
+         * 
+         * @param alert_type: Type of security alert
+         * @param alert_data: Alert details
+         * @param data_size: Size of alert data
+         * @return: 0 on success, -1 on error
+         */
+        int ocall_security_alert(
+            uint32_t alert_type,
+            [in, size=data_size] const uint8_t* alert_data,
+            size_t data_size
+        );
+    };
+};

@@ -1,0 +1,550 @@
+# QFLARE Kubernetes Namespace
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: qflare
+  labels:
+    name: qflare
+    version: "1.0.0"
+---
+# PostgreSQL Database
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: postgres
+  namespace: qflare
+spec:
+  serviceName: postgres
+  replicas: 1
+  selector:
+    matchLabels:
+      app: postgres
+  template:
+    metadata:
+      labels:
+        app: postgres
+    spec:
+      containers:
+      - name: postgres
+        image: postgres:15-alpine
+        env:
+        - name: POSTGRES_DB
+          value: qflare_db
+        - name: POSTGRES_USER
+          value: qflare
+        - name: POSTGRES_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: qflare-secrets
+              key: postgres-password
+        ports:
+        - containerPort: 5432
+        volumeMounts:
+        - name: postgres-storage
+          mountPath: /var/lib/postgresql/data
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "250m"
+          limits:
+            memory: "1Gi"
+            cpu: "500m"
+        livenessProbe:
+          exec:
+            command:
+            - pg_isready
+            - -U
+            - qflare
+            - -d
+            - qflare_db
+          initialDelaySeconds: 30
+          periodSeconds: 30
+        readinessProbe:
+          exec:
+            command:
+            - pg_isready
+            - -U
+            - qflare
+            - -d
+            - qflare_db
+          initialDelaySeconds: 5
+          periodSeconds: 5
+  volumeClaimTemplates:
+  - metadata:
+      name: postgres-storage
+    spec:
+      accessModes: ["ReadWriteOnce"]
+      resources:
+        requests:
+          storage: 10Gi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgres
+  namespace: qflare
+spec:
+  selector:
+    app: postgres
+  ports:
+  - port: 5432
+    targetPort: 5432
+  type: ClusterIP
+---
+# Redis Cache
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: redis
+  namespace: qflare
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: redis
+  template:
+    metadata:
+      labels:
+        app: redis
+    spec:
+      containers:
+      - name: redis
+        image: redis:7-alpine
+        ports:
+        - containerPort: 6379
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "100m"
+          limits:
+            memory: "512Mi"
+            cpu: "200m"
+        livenessProbe:
+          exec:
+            command:
+            - redis-cli
+            - ping
+          initialDelaySeconds: 30
+          periodSeconds: 30
+        readinessProbe:
+          exec:
+            command:
+            - redis-cli
+            - ping
+          initialDelaySeconds: 5
+          periodSeconds: 5
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: redis
+  namespace: qflare
+spec:
+  selector:
+    app: redis
+  ports:
+  - port: 6379
+    targetPort: 6379
+  type: ClusterIP
+---
+# QFLARE Server
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: qflare-server
+  namespace: qflare
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: qflare-server
+  template:
+    metadata:
+      labels:
+        app: qflare-server
+    spec:
+      nodeSelector:
+        sgx.intel.com/sgx: "true"  # Schedule on SGX-enabled nodes
+      securityContext:
+        fsGroup: 1000
+      containers:
+      - name: qflare-server
+        image: qflare/server:latest
+        imagePullPolicy: Always
+        env:
+        - name: DATABASE_URL
+          valueFrom:
+            secretKeyRef:
+              name: qflare-secrets
+              key: database-url
+        - name: REDIS_URL
+          value: "redis://redis:6379/0"
+        - name: QFLARE_JWT_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: qflare-secrets
+              key: jwt-secret
+        - name: QFLARE_LOG_LEVEL
+          value: "INFO"
+        - name: QFLARE_SGX_MODE
+          value: "HW"
+        - name: SGX_SPID
+          valueFrom:
+            secretKeyRef:
+              name: qflare-secrets
+              key: sgx-spid
+        - name: SGX_IAS_KEY
+          valueFrom:
+            secretKeyRef:
+              name: qflare-secrets
+              key: sgx-ias-key
+        ports:
+        - containerPort: 8000
+          name: http
+        - containerPort: 8443
+          name: https
+        - containerPort: 9090
+          name: metrics
+        volumeMounts:
+        - name: qflare-data
+          mountPath: /app/data
+        - name: qflare-logs
+          mountPath: /app/logs
+        - name: qflare-certs
+          mountPath: /app/certs
+          readOnly: true
+        - name: sgx-device
+          mountPath: /dev/sgx_enclave
+        - name: sgx-provision
+          mountPath: /dev/sgx_provision
+        resources:
+          requests:
+            memory: "2Gi"
+            cpu: "1000m"
+            sgx.intel.com/sgx: "1"
+          limits:
+            memory: "4Gi"
+            cpu: "2000m"
+            sgx.intel.com/sgx: "1"
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8000
+          initialDelaySeconds: 60
+          periodSeconds: 30
+          timeoutSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 8000
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+        securityContext:
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+          runAsNonRoot: true
+          runAsUser: 1000
+          capabilities:
+            drop:
+            - ALL
+      volumes:
+      - name: qflare-data
+        persistentVolumeClaim:
+          claimName: qflare-data-pvc
+      - name: qflare-logs
+        emptyDir: {}
+      - name: qflare-certs
+        secret:
+          secretName: qflare-tls-certs
+      - name: sgx-device
+        hostPath:
+          path: /dev/sgx_enclave
+          type: CharDevice
+      - name: sgx-provision
+        hostPath:
+          path: /dev/sgx_provision
+          type: CharDevice
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: qflare-server
+  namespace: qflare
+spec:
+  selector:
+    app: qflare-server
+  ports:
+  - name: http
+    port: 8000
+    targetPort: 8000
+  - name: https
+    port: 8443
+    targetPort: 8443
+  - name: metrics
+    port: 9090
+    targetPort: 9090
+  type: ClusterIP
+---
+# QFLARE Server Ingress
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: qflare-server-ingress
+  namespace: qflare
+  annotations:
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/backend-protocol: "HTTPS"
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+spec:
+  tls:
+  - hosts:
+    - qflare.example.com
+    secretName: qflare-tls
+  rules:
+  - host: qflare.example.com
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: qflare-server
+            port:
+              number: 8443
+---
+# Persistent Volume Claim for Server Data
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: qflare-data-pvc
+  namespace: qflare
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 50Gi
+  storageClassName: fast-ssd
+---
+# QFLARE Edge Node DaemonSet (for edge deployment)
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: qflare-edge
+  namespace: qflare
+spec:
+  selector:
+    matchLabels:
+      app: qflare-edge
+  template:
+    metadata:
+      labels:
+        app: qflare-edge
+    spec:
+      nodeSelector:
+        node-type: edge  # Deploy only on edge nodes
+      hostNetwork: true
+      containers:
+      - name: qflare-edge
+        image: qflare/edge:latest
+        imagePullPolicy: Always
+        env:
+        - name: QFLARE_DEVICE_ID
+          valueFrom:
+            fieldRef:
+              fieldPath: spec.nodeName
+        - name: QFLARE_DEVICE_TYPE
+          value: "edge"
+        - name: QFLARE_SERVER_URL
+          value: "https://qflare-server:8443"
+        - name: QFLARE_LOG_LEVEL
+          value: "INFO"
+        ports:
+        - containerPort: 8001
+          hostPort: 8001
+        volumeMounts:
+        - name: edge-data
+          mountPath: /app/data
+        - name: edge-logs
+          mountPath: /app/logs
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "500m"
+          limits:
+            memory: "1Gi"
+            cpu: "1000m"
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8001
+          initialDelaySeconds: 30
+          periodSeconds: 60
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 8001
+          initialDelaySeconds: 10
+          periodSeconds: 30
+        securityContext:
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+          runAsNonRoot: true
+          runAsUser: 1000
+      volumes:
+      - name: edge-data
+        hostPath:
+          path: /opt/qflare/data
+          type: DirectoryOrCreate
+      - name: edge-logs
+        hostPath:
+          path: /var/log/qflare
+          type: DirectoryOrCreate
+---
+# Monitoring: Prometheus
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: prometheus
+  namespace: qflare
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: prometheus
+  template:
+    metadata:
+      labels:
+        app: prometheus
+    spec:
+      containers:
+      - name: prometheus
+        image: prom/prometheus:latest
+        args:
+        - --config.file=/etc/prometheus/prometheus.yml
+        - --storage.tsdb.path=/prometheus
+        - --web.console.libraries=/etc/prometheus/console_libraries
+        - --web.console.templates=/etc/prometheus/consoles
+        - --web.enable-lifecycle
+        ports:
+        - containerPort: 9090
+        volumeMounts:
+        - name: prometheus-config
+          mountPath: /etc/prometheus
+        - name: prometheus-storage
+          mountPath: /prometheus
+        resources:
+          requests:
+            memory: "1Gi"
+            cpu: "500m"
+          limits:
+            memory: "2Gi"
+            cpu: "1000m"
+      volumes:
+      - name: prometheus-config
+        configMap:
+          name: prometheus-config
+      - name: prometheus-storage
+        persistentVolumeClaim:
+          claimName: prometheus-storage-pvc
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: prometheus
+  namespace: qflare
+spec:
+  selector:
+    app: prometheus
+  ports:
+  - port: 9090
+    targetPort: 9090
+  type: ClusterIP
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: prometheus-storage-pvc
+  namespace: qflare
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 20Gi
+---
+# Grafana Dashboard
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: grafana
+  namespace: qflare
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: grafana
+  template:
+    metadata:
+      labels:
+        app: grafana
+    spec:
+      containers:
+      - name: grafana
+        image: grafana/grafana:latest
+        env:
+        - name: GF_SECURITY_ADMIN_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: qflare-secrets
+              key: grafana-password
+        - name: GF_USERS_ALLOW_SIGN_UP
+          value: "false"
+        ports:
+        - containerPort: 3000
+        volumeMounts:
+        - name: grafana-storage
+          mountPath: /var/lib/grafana
+        - name: grafana-config
+          mountPath: /etc/grafana/provisioning
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "250m"
+          limits:
+            memory: "1Gi"
+            cpu: "500m"
+      volumes:
+      - name: grafana-storage
+        persistentVolumeClaim:
+          claimName: grafana-storage-pvc
+      - name: grafana-config
+        configMap:
+          name: grafana-config
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: grafana
+  namespace: qflare
+spec:
+  selector:
+    app: grafana
+  ports:
+  - port: 3000
+    targetPort: 3000
+  type: ClusterIP
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: grafana-storage-pvc
+  namespace: qflare
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 5Gi

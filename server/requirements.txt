@@ -15,3 +15,7 @@ requests==2.31.0
 httpx==0.25.2
 pytest==7.4.3
 pytest-asyncio==0.21.1
+# Database dependencies
+sqlalchemy==2.0.23
+psycopg2-binary==2.9.9
+alembic==1.13.1

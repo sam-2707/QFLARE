@@ -1,0 +1,151 @@
+# Multi-stage Dockerfile for QFLARE Server
+# Builds a production-ready container with all components
+
+# Stage 1: Base dependencies and SGX support
+FROM ubuntu:22.04 AS base-deps
+
+# Install system dependencies
+RUN apt-get update && apt-get install -y \
+    wget \
+    curl \
+    gnupg \
+    software-properties-common \
+    build-essential \
+    cmake \
+    git \
+    python3 \
+    python3-pip \
+    python3-dev \
+    libssl-dev \
+    libcurl4-openssl-dev \
+    pkg-config \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install Intel SGX SDK and driver support
+RUN wget -O - https://download.01.org/intel-sgx/sgx_repo/ubuntu/intel-sgx-deb.key | apt-key add - \
+    && echo 'deb [arch=amd64] https://download.01.org/intel-sgx/sgx_repo/ubuntu jammy main' > /etc/apt/sources.list.d/intel-sgx.list \
+    && apt-get update \
+    && apt-get install -y \
+        sgx-aesm-service \
+        libsgx-aesm-launch-plugin \
+        libsgx-aesm-pce-plugin \
+        libsgx-aesm-quote-ex-plugin \
+        libsgx-urts \
+        libsgx-enclave-common \
+        libsgx-dcap-ql \
+    && rm -rf /var/lib/apt/lists/*
+
+# Stage 2: Python dependencies
+FROM base-deps AS python-deps
+
+# Set Python environment
+ENV PYTHONPATH=/app/server:/app
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV PYTHONUNBUFFERED=1
+
+# Install Python dependencies
+COPY requirements.txt /tmp/
+COPY server/requirements.txt /tmp/server-requirements.txt
+
+RUN pip3 install --no-cache-dir --upgrade pip setuptools wheel \
+    && pip3 install --no-cache-dir -r /tmp/requirements.txt \
+    && pip3 install --no-cache-dir -r /tmp/server-requirements.txt \
+    && pip3 install --no-cache-dir \
+        torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cpu \
+        cryptography \
+        prometheus-client \
+        psycopg2-binary \
+        sqlalchemy \
+        alembic \
+        redis \
+        celery
+
+# Stage 3: SGX development environment
+FROM python-deps AS sgx-dev
+
+# Install SGX SDK for enclave building
+ENV SGX_SDK=/opt/intel/sgxsdk
+ENV PATH=$PATH:$SGX_SDK/bin:$SGX_SDK/bin/x64
+ENV PKG_CONFIG_PATH=$PKG_CONFIG_PATH:$SGX_SDK/pkgconfig
+ENV LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$SGX_SDK/sdk_libs
+
+RUN wget https://download.01.org/intel-sgx/sgx-linux/2.23/distro/ubuntu22.04-server/sgx_linux_x64_sdk_2.23.100.2.bin \
+    && chmod +x sgx_linux_x64_sdk_2.23.100.2.bin \
+    && echo -e 'no\n/opt/intel' | ./sgx_linux_x64_sdk_2.23.100.2.bin \
+    && rm sgx_linux_x64_sdk_2.23.100.2.bin
+
+# Stage 4: Build enclaves
+FROM sgx-dev AS enclave-builder
+
+WORKDIR /app
+
+# Copy enclave source code
+COPY enclaves/ ./enclaves/
+
+# Build SGX enclaves
+RUN cd enclaves \
+    && source $SGX_SDK/environment \
+    && make clean \
+    && make check-sgx \
+    && make release \
+    && make install
+
+# Stage 5: Production server
+FROM python-deps AS production
+
+# Create non-root user for security
+RUN groupadd -r qflare && useradd -r -g qflare qflare
+
+# Set working directory
+WORKDIR /app
+
+# Copy application code
+COPY . .
+
+# Copy built enclaves from builder stage
+COPY --from=enclave-builder /app/server/enclave/sgx/ ./server/enclave/sgx/
+
+# Install liboqs for post-quantum cryptography
+RUN cd liboqs \
+    && mkdir build \
+    && cd build \
+    && cmake -GNinja \
+        -DCMAKE_INSTALL_PREFIX=/usr/local \
+        -DOQS_BUILD_ONLY_LIB=ON \
+        -DOQS_USE_OPENSSL=ON \
+        .. \
+    && ninja \
+    && ninja install \
+    && ldconfig
+
+# Install liboqs-python
+RUN cd liboqs-python \
+    && pip3 install .
+
+# Setup QFLARE configuration
+RUN mkdir -p /app/logs /app/data /app/config \
+    && chown -R qflare:qflare /app
+
+# Copy configuration files
+COPY config/global_config.yaml /app/config/
+COPY docker/server-config.yaml /app/config/server-config.yaml
+
+# Expose ports
+EXPOSE 8000 8443 9090
+
+# Set environment variables
+ENV QFLARE_CONFIG_PATH=/app/config/server-config.yaml
+ENV QFLARE_LOG_LEVEL=INFO
+ENV QFLARE_DATA_PATH=/app/data
+ENV QFLARE_SGX_MODE=HW
+ENV QFLARE_TEE_PREFERRED=auto
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
+    CMD curl -f http://localhost:8000/health || exit 1
+
+# Switch to non-root user
+USER qflare
+
+# Start the QFLARE server
+CMD ["python3", "-m", "server.main"]

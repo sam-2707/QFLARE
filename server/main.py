@@ -1,7 +1,9 @@
+
 """
 QFLARE Server - Main Application
 
 This is the main FastAPI application for the QFLARE federated learning server.
+Now with persistent database storage.
 """
 
 from fastapi import FastAPI, Request, HTTPException, status
@@ -21,6 +23,7 @@ from datetime import datetime
 from api.routes import router as api_router
 from fl_core.client_manager import register_client
 from registry import register_device, get_registered_devices
+from database import initialize_database, cleanup_database
 
 # Configure logging
 # 
@@ -44,6 +47,32 @@ app = FastAPI(
 # 3. Apply middleware and state to the app
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+
+
+@app.on_event("startup")
+async def startup_event():
+    """Initialize database on server startup."""
+    try:
+        # Initialize database with default SQLite configuration
+        db_config = {
+            "database_type": "sqlite",
+            "sqlite_path": "qflare.db"
+        }
+        initialize_database(db_config)
+        logger.info("Database initialized successfully")
+    except Exception as e:
+        logger.error(f"Failed to initialize database: {e}")
+        raise
+
+
+@app.on_event("shutdown")
+async def shutdown_event():
+    """Cleanup database connections on server shutdown."""
+    try:
+        cleanup_database()
+        logger.info("Database connections cleaned up")
+    except Exception as e:
+        logger.error(f"Error cleaning up database: {e}")
 
 # Configure CORS
 app.add_middleware(
@@ -91,6 +120,15 @@ async def register_v2_form(request: Request):
         {"request": request, "timestamp": int(time.time())} # Add the timestamp here
     )
 
+@app.get("/enroll_dashboard", response_class=HTMLResponse)
+@limiter.limit("10/minute")
+async def enroll_dashboard(request: Request):
+    """Serves the device enrollment dashboard."""
+    return templates.TemplateResponse(
+        "enroll_dashboard.html",
+        {"request": request}
+    )
+    
 @app.get("/devices", response_class=HTMLResponse)
 @limiter.limit("30/minute")
 async def list_devices(request: Request):

@@ -8,3 +8,5 @@ urllib3==2.0.7
 aiofiles==23.2.1
 pydantic
 jinja2
+torch>=2.0.0
+torchvision>=0.15.0

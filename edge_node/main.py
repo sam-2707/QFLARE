@@ -17,8 +17,8 @@ from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
 
 from secure_comm import authenticate_with_server, establish_secure_session
-from trainer import train_local_model
-from data_loader import load_local_data
+from trainer import LocalTrainer, train_local_model
+from data_loader import FederatedDataLoader, load_local_data
 
 # Configure logging
 logging.basicConfig(
@@ -273,14 +273,56 @@ async def main():
             
             # Train local model
             logger.info("Training local model")
-            local_data = load_local_data()
-            if not local_data:
-                logger.warning("No local data available, skipping round")
-                await asyncio.sleep(60)
-                continue
             
-            trained_model = train_local_model(global_model, local_data)
-            if not trained_model:
+            # Initialize data loader if not already done
+            if not hasattr(main, 'data_loader'):
+                try:
+                    main.data_loader = FederatedDataLoader(
+                        dataset_name="MNIST",
+                        device_id=DEVICE_ID,
+                        num_devices=10,
+                        iid=True
+                    )
+                    main.trainer = LocalTrainer(
+                        learning_rate=0.01,
+                        local_epochs=3,
+                        batch_size=32
+                    )
+                    logger.info("Initialized data loader and trainer")
+                except Exception as e:
+                    logger.error(f"Failed to initialize data loader: {e}")
+                    # Fallback to dummy data
+                    from data_loader import get_sample_data
+                    train_loader, test_loader = get_sample_data()
+                    main.trainer = LocalTrainer()
+            
+            # Get training data
+            try:
+                train_loader = main.data_loader.get_train_loader(batch_size=32)
+                test_loader = main.data_loader.get_test_loader(batch_size=32)
+            except Exception as e:
+                logger.error(f"Failed to get data loaders: {e}")
+                from data_loader import get_sample_data
+                train_loader, test_loader = get_sample_data()
+            
+            # Train model
+            try:
+                trained_model_weights, training_metadata = main.trainer.train_local_model(
+                    train_loader, 
+                    global_model
+                )
+                
+                # Evaluate model
+                eval_metrics = main.trainer.evaluate_model(test_loader)
+                logger.info(f"Local evaluation: {eval_metrics}")
+                
+            except Exception as e:
+                logger.error(f"Training failed: {e}")
+                # Fallback to old interface
+                trained_model_weights = train_local_model(train_loader, global_model)
+                training_metadata = {"fallback": True}
+            
+            if not trained_model_weights:
                 logger.error("Local training failed")
                 await asyncio.sleep(60)
                 continue
@@ -290,10 +332,10 @@ async def main():
                 "round": round_number,
                 "device_id": DEVICE_ID,
                 "timestamp": time.time(),
-                "data_samples": len(local_data)
+                **training_metadata
             }
             
-            if await submit_model_update(trained_model, metadata):
+            if await submit_model_update(trained_model_weights, metadata):
                 logger.info(f"Round {round_number} completed successfully")
             else:
                 logger.error(f"Round {round_number} failed")

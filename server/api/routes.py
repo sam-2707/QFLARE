@@ -382,12 +382,18 @@ async def request_qkey_get():
         device_id = f"temp_device_{int(time.time())}"
         kem_public_key, sig_public_key = generate_device_keypair(device_id)
         
+        # Auto-generate enrollment token using TokenGenerator
+        from scripts.generate_token import TokenGenerator
+        token_gen = TokenGenerator()
+        enrollment_token = token_gen.generate_token(device_id)
+
         return {
             "status": "success",
             "device_id": device_id,
             "kem_public_key": kem_public_key,
             "signature_public_key": sig_public_key,
-            "message": "Quantum keypair generated successfully"
+            "enrollment_token": enrollment_token,
+            "message": "Quantum keypair and enrollment token generated successfully"
         }
         
     except Exception as e:

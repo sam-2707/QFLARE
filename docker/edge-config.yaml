@@ -1,0 +1,160 @@
+# QFLARE Edge Node Docker Configuration
+qflare:
+  # Edge Node Configuration
+  edge_node:
+    device_id: "${QFLARE_DEVICE_ID}"
+    device_type: "${QFLARE_DEVICE_TYPE:-edge}"
+    server_url: "${QFLARE_SERVER_URL:-https://qflare-server:8443}"
+    
+    # Communication Settings
+    communication:
+      heartbeat_interval: 30
+      registration_retry_interval: 60
+      max_retries: 5
+      timeout: 30
+      
+    # Local Server Settings
+    local_server:
+      host: "0.0.0.0"
+      port: 8001
+      workers: 1
+
+  # Training Configuration
+  training:
+    # Local Training Parameters
+    local:
+      batch_size: 16
+      epochs: 5
+      learning_rate: 0.01
+      optimizer: "sgd"
+      
+    # Data Configuration
+    data:
+      path: "/app/data"
+      dataset: "cifar10"
+      validation_split: 0.2
+      shuffle: true
+      
+    # Model Configuration
+    model:
+      architecture: "cnn"
+      save_path: "/app/models"
+      checkpoint_interval: 10
+
+  # Security Configuration
+  security:
+    # Device Authentication
+    authentication:
+      token_file: "/app/data/device_token.json"
+      certificate_file: "/app/data/device_cert.pem"
+      private_key_file: "/app/data/device_key.pem"
+      
+    # Post-Quantum Cryptography
+    pqc:
+      enabled: true
+      signature_algorithm: "Dilithium3"
+      kem_algorithm: "Kyber768"
+      
+    # Secure Communication
+    communication:
+      tls_verify: true
+      cipher_suites:
+        - "TLS_AES_256_GCM_SHA384"
+        - "TLS_CHACHA20_POLY1305_SHA256"
+
+  # Resource Management
+  resources:
+    # Memory Management
+    memory:
+      max_model_size: "500MB"
+      garbage_collection_interval: 300
+      
+    # CPU Management
+    cpu:
+      max_utilization: 0.8
+      training_threads: 2
+      
+    # Storage Management
+    storage:
+      max_data_size: "2GB"
+      cleanup_interval: 3600
+      temp_cleanup: true
+
+  # Monitoring Configuration
+  monitoring:
+    # Metrics Collection
+    metrics:
+      enabled: true
+      collection_interval: 60
+      local_storage: true
+      
+    # Health Monitoring
+    health:
+      enabled: true
+      endpoint: "/health"
+      system_monitoring: true
+      
+    # Logging
+    logging:
+      level: "${QFLARE_LOG_LEVEL:-INFO}"
+      format: "json"
+      file: "/app/logs/qflare-edge.log"
+      rotation:
+        max_size: "50MB"
+        backup_count: 5
+
+  # Data Configuration
+  data:
+    # Dataset Configuration
+    datasets:
+      cifar10:
+        path: "/app/data/cifar10"
+        download: true
+        transform: "standard"
+      
+      mnist:
+        path: "/app/data/mnist"
+        download: true
+        transform: "standard"
+        
+    # Data Loader Configuration
+    loader:
+      num_workers: 2
+      pin_memory: false
+      persistent_workers: false
+
+  # Privacy Configuration
+  privacy:
+    # Differential Privacy
+    differential_privacy:
+      enabled: false
+      epsilon: 1.0
+      delta: 1e-5
+      
+    # Local Data Protection
+    local_protection:
+      encrypt_data: true
+      secure_deletion: true
+      access_logging: true
+
+  # Network Configuration
+  network:
+    # Connection Settings
+    connection:
+      max_concurrent_connections: 5
+      keep_alive: true
+      tcp_nodelay: true
+      
+    # Proxy Settings
+    proxy:
+      enabled: false
+      http_proxy: "${HTTP_PROXY}"
+      https_proxy: "${HTTPS_PROXY}"
+      no_proxy: "${NO_PROXY}"
+
+  # Development Configuration
+  development:
+    debug: false
+    simulate_training: false
+    mock_data: false
+    profiling: false

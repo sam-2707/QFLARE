@@ -46,6 +46,9 @@ async function handleGenerateKeys() {
         if (document.getElementById('deviceId')) {
             document.getElementById('deviceId').textContent = data.device_id;
         }
+        if (document.getElementById('enrollToken')) {
+            document.getElementById('enrollToken').textContent = data.enrollment_token;
+        }
         
         if (resultBox) resultBox.style.display = 'block';
 
