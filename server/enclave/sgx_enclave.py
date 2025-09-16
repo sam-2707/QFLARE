@@ -33,10 +33,25 @@ try:
     from sgx_sdk.attestation import AttestationClient, IASClient
     from sgx_sdk.sealing import seal_data, unseal_data
     SGX_AVAILABLE = True
+    
+    # Import our new hardware implementation
+    from .sgx_hardware import (
+        SGXHardwareEnclave, SGXHardwareConfig,
+        create_hardware_sgx_enclave, is_sgx_hardware_available,
+        get_sgx_capabilities
+    )
+    
 except ImportError:
     # Fallback for development/testing
     SGX_AVAILABLE = False
     logging.warning("SGX SDK not available, using simulation mode")
+    
+    # Import hardware implementation anyway for simulation
+    from .sgx_hardware import (
+        SGXHardwareEnclave, SGXHardwareConfig,
+        create_hardware_sgx_enclave, is_sgx_hardware_available,
+        get_sgx_capabilities
+    )
 
 logger = logging.getLogger(__name__)
 
@@ -125,13 +140,18 @@ class SGXSecureEnclave:
         self.sealed_keys: Dict[str, bytes] = {}
         self._lock = threading.RLock()
         
+        # Initialize hardware enclave if available
+        self.hardware_enclave: Optional[SGXHardwareEnclave] = None
+        
         # Performance metrics
         self.metrics = {
             'total_aggregations': 0,
             'total_updates_processed': 0,
             'total_updates_rejected': 0,
             'average_aggregation_time': 0.0,
-            'attestation_count': 0
+            'attestation_count': 0,
+            'hardware_operations': 0,
+            'simulation_operations': 0
         }
         
         logger.info(f"Initializing SGX enclave with config: {config}")
@@ -142,11 +162,13 @@ class SGXSecureEnclave:
         try:
             self.status = EnclaveStatus.INITIALIZING
             
-            if self.config.simulation_mode:
+            # Try to initialize hardware enclave first
+            if is_sgx_hardware_available() and not self.config.simulation_mode:
+                logger.info("Attempting to initialize SGX hardware enclave")
+                self._initialize_hardware_enclave()
+            else:
                 logger.info("Running in SGX simulation mode")
                 self._initialize_simulation_mode()
-            else:
-                self._initialize_hardware_mode()
             
             # Initialize attestation if enabled
             if self.config.attestation_enabled:
@@ -164,6 +186,34 @@ class SGXSecureEnclave:
             logger.error(f"Failed to initialize SGX enclave: {e}")
             raise EnclaveError(f"Enclave initialization failed: {e}")
     
+    def _initialize_hardware_enclave(self) -> None:
+        """Initialize the hardware SGX enclave."""
+        try:
+            # Create hardware configuration from SGX config
+            hardware_config = SGXHardwareConfig(
+                enclave_file=self.config.enclave_path,
+                debug_mode=self.config.debug_mode,
+                attestation_enabled=self.config.attestation_enabled,
+                ias_spid=self.config.ias_spid,
+                ias_primary_key=self.config.ias_primary_key,
+                poison_threshold=self.config.poison_threshold,
+                byzantine_tolerance=self.config.byzantine_tolerance,
+                max_model_size=self.config.max_model_size,
+                enable_sealing=self.config.enable_sealing,
+                sealed_data_dir=self.config.sealed_data_path
+            )
+            
+            # Create hardware enclave
+            self.hardware_enclave = create_hardware_sgx_enclave(hardware_config)
+            self.enclave_id = self.hardware_enclave.enclave_id
+            
+            logger.info(f"Hardware SGX enclave initialized with ID: {self.enclave_id}")
+            
+        except Exception as e:
+            logger.error(f"Hardware enclave initialization failed: {e}")
+            logger.info("Falling back to simulation mode")
+            self._initialize_simulation_mode()
+
     def _initialize_hardware_mode(self) -> None:
         """Initialize enclave in hardware mode."""
         if not SGX_AVAILABLE:
@@ -259,21 +309,28 @@ class SGXSecureEnclave:
     
     def get_enclave_quote(self) -> Optional[bytes]:
         """Generate enclave quote for remote attestation."""
-        if self.config.simulation_mode:
-            # Return mock quote for simulation
-            return b"MOCK_SGX_QUOTE_" + str(self.enclave_id).encode()
-        
         try:
-            if not SGX_AVAILABLE:
-                return None
-            
-            # Generate quote using SGX SDK
-            quote = self._ecall_get_quote()
-            self.metrics['attestation_count'] += 1
-            
-            logger.info("Generated enclave quote for attestation")
-            return quote
-            
+            if self.hardware_enclave:
+                # Use hardware enclave for quote generation
+                report, quote = self.hardware_enclave.generate_attestation_quote()
+                self.metrics['attestation_count'] += 1
+                logger.info("Generated hardware enclave quote for attestation")
+                return quote
+            elif self.config.simulation_mode:
+                # Return mock quote for simulation
+                return b"MOCK_SGX_QUOTE_" + str(self.enclave_id).encode()
+            else:
+                # Fallback to original implementation
+                if not SGX_AVAILABLE:
+                    return None
+                
+                # Generate quote using SGX SDK
+                quote = self._ecall_get_quote()
+                self.metrics['attestation_count'] += 1
+                
+                logger.info("Generated enclave quote for attestation")
+                return quote
+                
         except Exception as e:
             logger.error(f"Failed to generate quote: {e}")
             return None
@@ -325,10 +382,12 @@ class SGXSecureEnclave:
                 verified_updates = self._verify_update_attestations(model_updates)
                 
                 # Perform secure aggregation
-                if self.config.simulation_mode:
-                    result = self._simulate_secure_aggregation(verified_updates, global_model_weights)
-                else:
+                if self.hardware_enclave:
                     result = self._hardware_secure_aggregation(verified_updates, global_model_weights)
+                    self.metrics['hardware_operations'] += 1
+                else:
+                    result = self._simulate_secure_aggregation(verified_updates, global_model_weights)
+                    self.metrics['simulation_operations'] += 1
                 
                 # Update metrics and history
                 aggregation_time = time.time() - start_time
@@ -437,15 +496,45 @@ class SGXSecureEnclave:
         logger.info("Performing hardware-based secure aggregation")
         
         try:
-            # Prepare encrypted update data for enclave
-            update_data = []
-            for update in updates:
-                update_data.append({
-                    'device_id': update.device_id,
-                    'encrypted_weights': update.encrypted_weights,
-                    'timestamp': update.timestamp,
-                    'metadata': update.metadata
-                })
+            if self.hardware_enclave:
+                # Use the new hardware enclave implementation
+                update_data = []
+                for update in updates:
+                    update_data.append({
+                        'device_id': update.device_id,
+                        'encrypted_weights': update.encrypted_weights,
+                        'timestamp': update.timestamp,
+                        'metadata': update.metadata or {}
+                    })
+                
+                # Call hardware enclave aggregation
+                result_data = self.hardware_enclave.secure_aggregate(update_data, global_weights)
+                
+                return AggregationResult(
+                    aggregated_weights=result_data['aggregated_weights'],
+                    num_updates_processed=result_data['num_processed'],
+                    num_updates_rejected=result_data['num_rejected'],
+                    rejected_device_ids=result_data['rejected_devices'],
+                    aggregation_hash=result_data['aggregation_hash'],
+                    timestamp=result_data['timestamp'],
+                    byzantine_detected=result_data['byzantine_detected'],
+                    attestation_report={
+                        'hardware_verified': True,
+                        'enclave_id': self.hardware_enclave.enclave_id,
+                        'operation_time': result_data.get('operation_time', 0)
+                    }
+                )
+            else:
+                # Fallback to original hardware implementation
+                # Prepare encrypted update data for enclave
+                update_data = []
+                for update in updates:
+                    update_data.append({
+                        'device_id': update.device_id,
+                        'encrypted_weights': update.encrypted_weights,
+                        'timestamp': update.timestamp,
+                        'metadata': update.metadata
+                    })
             
             # Call enclave function for secure aggregation
             result_data = self._ecall_secure_aggregate(
@@ -654,7 +743,7 @@ class SGXSecureEnclave:
     
     def get_enclave_status(self) -> Dict:
         """Get comprehensive enclave status."""
-        return {
+        status = {
             'enclave_type': 'sgx_secure_enclave',
             'status': self.status.value,
             'enclave_id': self.enclave_id,
@@ -665,6 +754,22 @@ class SGXSecureEnclave:
             'metrics': self.metrics.copy(),
             'config': asdict(self.config)
         }
+        
+        # Add hardware enclave status if available
+        if self.hardware_enclave:
+            hardware_status = self.hardware_enclave.get_enclave_status()
+            status.update({
+                'hardware_enclave': True,
+                'hardware_status': hardware_status,
+                'sgx_capabilities': get_sgx_capabilities()
+            })
+        else:
+            status.update({
+                'hardware_enclave': False,
+                'sgx_capabilities': get_sgx_capabilities()
+            })
+        
+        return status
     
     def get_aggregation_history(self) -> List[Dict]:
         """Get aggregation history."""
@@ -675,8 +780,17 @@ class SGXSecureEnclave:
         try:
             self.status = EnclaveStatus.DESTROYED
             
+            # Destroy hardware enclave if present
+            if self.hardware_enclave:
+                self.hardware_enclave.destroy_enclave()
+                self.hardware_enclave = None
+            
+            # Destroy original enclave if present
             if not self.config.simulation_mode and self.enclave:
                 self.enclave.destroy()
+            
+            self.enclave = None
+            self.enclave_id = None
             
             logger.info("SGX enclave destroyed successfully")
             

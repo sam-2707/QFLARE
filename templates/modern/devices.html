@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ title }}</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body class="bg-gray-50" x-data="deviceManager">
+    <!-- Navigation -->
+    <nav class="bg-blue-600 text-white p-4">
+        <div class="container mx-auto flex justify-between items-center">
+            <h1 class="text-xl font-bold">QFLARE - Device Management</h1>
+            <div class="space-x-4">
+                <a href="/" class="hover:text-blue-200">Dashboard</a>
+                <a href="/devices" class="text-yellow-300">Devices</a>
+                <a href="/enrollment" class="hover:text-blue-200">Enrollment</a>
+                <a href="/admin" class="hover:text-blue-200">Admin</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mx-auto p-6">
+        <!-- Header -->
+        <div class="mb-6">
+            <h2 class="text-2xl font-bold text-gray-800">Device Management</h2>
+            <p class="text-gray-600">Monitor and manage registered devices</p>
+        </div>
+
+        <!-- Device Statistics -->
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
+            <div class="bg-white p-6 rounded-lg shadow">
+                <h3 class="text-lg font-semibold text-gray-700">Total Devices</h3>
+                <p class="text-3xl font-bold text-blue-600" x-text="stats.totalDevices">0</p>
+            </div>
+            <div class="bg-white p-6 rounded-lg shadow">
+                <h3 class="text-lg font-semibold text-gray-700">Active Devices</h3>
+                <p class="text-3xl font-bold text-green-600" x-text="stats.activeDevices">0</p>
+            </div>
+            <div class="bg-white p-6 rounded-lg shadow">
+                <h3 class="text-lg font-semibold text-gray-700">Pending Approval</h3>
+                <p class="text-3xl font-bold text-yellow-600" x-text="stats.pendingDevices">0</p>
+            </div>
+            <div class="bg-white p-6 rounded-lg shadow">
+                <h3 class="text-lg font-semibold text-gray-700">Training Sessions</h3>
+                <p class="text-3xl font-bold text-purple-600" x-text="stats.trainingSessions">0</p>
+            </div>
+        </div>
+
+        <!-- Device List -->
+        <div class="bg-white rounded-lg shadow">
+            <div class="p-6 border-b">
+                <h3 class="text-lg font-semibold">Registered Devices</h3>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="w-full">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Device ID</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Organization</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Last Seen</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Type</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-200">
+                        <template x-for="device in devices" :key="device.device_id">
+                            <tr>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <div class="text-sm font-medium text-gray-900" x-text="device.device_id"></div>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <div class="text-sm text-gray-900" x-text="device.organization"></div>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <span :class="{
+                                        'bg-green-100 text-green-800': device.status === 'approved',
+                                        'bg-yellow-100 text-yellow-800': device.status === 'pending',
+                                        'bg-red-100 text-red-800': device.status === 'rejected'
+                                    }" class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full" x-text="device.status"></span>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500" x-text="formatDate(device.last_seen)"></td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500" x-text="device.device_type"></td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                                    <template x-if="device.status === 'pending'">
+                                        <div class="space-x-2">
+                                            <button @click="approveDevice(device.device_id)" class="text-green-600 hover:text-green-900">Approve</button>
+                                            <button @click="rejectDevice(device.device_id)" class="text-red-600 hover:text-red-900">Reject</button>
+                                        </div>
+                                    </template>
+                                    <template x-if="device.status !== 'pending'">
+                                        <button @click="viewDevice(device.device_id)" class="text-indigo-600 hover:text-indigo-900">View</button>
+                                    </template>
+                                </td>
+                            </tr>
+                        </template>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('alpine:init', () => {
+            Alpine.data('deviceManager', () => ({
+                devices: [],
+                stats: {
+                    totalDevices: 0,
+                    activeDevices: 0,
+                    pendingDevices: 0,
+                    trainingSessions: 0
+                },
+
+                async init() {
+                    await this.loadDevices();
+                    await this.loadStats();
+                },
+
+                async loadDevices() {
+                    try {
+                        const response = await fetch('/api/v2/devices');
+                        if (response.ok) {
+                            this.devices = await response.json();
+                        }
+                    } catch (error) {
+                        console.error('Failed to load devices:', error);
+                    }
+                },
+
+                async loadStats() {
+                    try {
+                        const response = await fetch('/api/v2/system/status');
+                        if (response.ok) {
+                            const status = await response.json();
+                            this.stats.totalDevices = this.devices.length;
+                            this.stats.activeDevices = this.devices.filter(d => d.status === 'approved').length;
+                            this.stats.pendingDevices = this.devices.filter(d => d.status === 'pending').length;
+                            this.stats.trainingSessions = status.active_sessions || 0;
+                        }
+                    } catch (error) {
+                        console.error('Failed to load stats:', error);
+                    }
+                },
+
+                async approveDevice(deviceId) {
+                    try {
+                        const response = await fetch(`/api/v2/devices/${deviceId}/approve`, {
+                            method: 'PUT'
+                        });
+                        if (response.ok) {
+                            await this.loadDevices();
+                            await this.loadStats();
+                        }
+                    } catch (error) {
+                        console.error('Failed to approve device:', error);
+                    }
+                },
+
+                async rejectDevice(deviceId) {
+                    try {
+                        const response = await fetch(`/api/v2/devices/${deviceId}/reject`, {
+                            method: 'PUT'
+                        });
+                        if (response.ok) {
+                            await this.loadDevices();
+                            await this.loadStats();
+                        }
+                    } catch (error) {
+                        console.error('Failed to reject device:', error);
+                    }
+                },
+
+                viewDevice(deviceId) {
+                    // Could open a modal or navigate to detail page
+                    alert(`View device details for: ${deviceId}`);
+                },
+
+                formatDate(dateString) {
+                    if (!dateString) return 'Never';
+                    return new Date(dateString).toLocaleString();
+                }
+            }));
+        });
+    </script>
+</body>
+</html>
