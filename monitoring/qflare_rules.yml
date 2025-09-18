@@ -1,0 +1,102 @@
+groups:
+- name: qflare_alerts
+  rules:
+  # API Server Health
+  - alert: QFLAREAPIDown
+    expr: up{job="qflare-api"} == 0
+    for: 1m
+    labels:
+      severity: critical
+    annotations:
+      summary: "QFLARE API server is down"
+      description: "QFLARE API server has been down for more than 1 minute."
+
+  # High Error Rate
+  - alert: HighErrorRate
+    expr: rate(qflare_requests_total{status=~"5.."}[5m]) > 0.1
+    for: 2m
+    labels:
+      severity: warning
+    annotations:
+      summary: "High error rate detected"
+      description: "Error rate is {{ $value }} errors per second over the last 5 minutes."
+
+  # High Response Time
+  - alert: HighResponseTime
+    expr: histogram_quantile(0.95, rate(qflare_request_duration_seconds_bucket[5m])) > 2
+    for: 5m
+    labels:
+      severity: warning
+    annotations:
+      summary: "High response time"
+      description: "95th percentile response time is {{ $value }} seconds."
+
+  # Database Connection Issues
+  - alert: DatabaseConnectionFailed
+    expr: up{job="postgres"} == 0
+    for: 30s
+    labels:
+      severity: critical
+    annotations:
+      summary: "Database connection failed"
+      description: "PostgreSQL database is unreachable."
+
+  # Redis Connection Issues
+  - alert: RedisConnectionFailed
+    expr: up{job="redis"} == 0
+    for: 30s
+    labels:
+      severity: warning
+    annotations:
+      summary: "Redis connection failed"
+      description: "Redis cache is unreachable."
+
+  # Low Device Count
+  - alert: LowDeviceCount
+    expr: qflare_active_devices < 10
+    for: 5m
+    labels:
+      severity: info
+    annotations:
+      summary: "Low device count"
+      description: "Only {{ $value }} devices are currently active."
+
+  # High Memory Usage
+  - alert: HighMemoryUsage
+    expr: (1 - (node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes)) * 100 > 80
+    for: 5m
+    labels:
+      severity: warning
+    annotations:
+      summary: "High memory usage"
+      description: "Memory usage is above 80% (current value: {{ $value }}%)"
+
+  # High CPU Usage
+  - alert: HighCPUUsage
+    expr: 100 - (avg by(instance) (rate(node_cpu_seconds_total{mode="idle"}[5m])) * 100) > 80
+    for: 5m
+    labels:
+      severity: warning
+    annotations:
+      summary: "High CPU usage"
+      description: "CPU usage is above 80% (current value: {{ $value }}%)"
+
+  # Disk Space Low
+  - alert: DiskSpaceLow
+    expr: (node_filesystem_free_bytes{fstype!="tmpfs"} / node_filesystem_size_bytes{fstype!="tmpfs"}) * 100 < 10
+    for: 5m
+    labels:
+      severity: critical
+    annotations:
+      summary: "Disk space low"
+      description: "Disk space usage is above 90% (current value: {{ $value }}%)"
+
+  # Security Alert - Too Many Failed Registrations
+  - alert: HighRegistrationFailures
+    expr: rate(qflare_device_registrations_failed_total[5m]) > 5
+    for: 2m
+    labels:
+      severity: warning
+    annotations:
+      summary: "High device registration failure rate"
+      description: "Device registration failure rate is {{ $value }} failures per second."

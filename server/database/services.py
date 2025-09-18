@@ -17,7 +17,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy import and_, or_, desc, func
 
 from .models import Device, GlobalModel, ModelUpdate, TrainingSession, AuditLog, UserToken
-from .connection import get_database
+from .connection import db_manager
 
 logger = logging.getLogger(__name__)
 

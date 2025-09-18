@@ -1,33 +1,36 @@
-# QFLARE Production Deployment Guide
-# Complete guide for deploying QFLARE in production environments
+# QFLARE Deployment Guide
 
 ## Overview
 
-This guide covers the complete deployment of the QFLARE (Quantum-Safe Federated Learning with Advanced Cryptographic Resilience) platform in production environments using Docker containers and Kubernetes orchestration.
+This guide covers the complete deployment process for QFLARE across different environments, from development setup to production deployment with high availability.
 
 ## Prerequisites
 
 ### System Requirements
 
-#### Server Requirements
-- **CPU**: Minimum 8 cores, recommended 16+ cores
-- **Memory**: Minimum 16GB RAM, recommended 32GB+
-- **Storage**: Minimum 100GB SSD, recommended 500GB+ NVMe SSD
-- **Network**: Gigabit Ethernet, low latency connection
-- **SGX Support**: Intel SGX-enabled CPU (for hardware TEE)
-- **Operating System**: Ubuntu 22.04 LTS or RHEL 8+
+#### Minimum Requirements (Development)
+- CPU: 2 cores
+- RAM: 4GB
+- Storage: 50GB
+- OS: Linux/macOS/Windows with Docker support
 
-#### Edge Node Requirements
-- **CPU**: Minimum 2 cores, recommended 4+ cores
-- **Memory**: Minimum 4GB RAM, recommended 8GB+
-- **Storage**: Minimum 20GB SSD
-- **Network**: Stable internet connection (minimum 10 Mbps)
-- **Operating System**: Ubuntu 22.04 LTS, CentOS 8+, or compatible
+#### Recommended Requirements (Production)
+- CPU: 8+ cores per node
+- RAM: 16GB+ per node
+- Storage: 500GB+ SSD
+- Network: Gigabit Ethernet
+- OS: Ubuntu 20.04+ LTS or RHEL 8+
 
-#### Kubernetes Cluster Requirements
-- **Kubernetes Version**: 1.25+
-- **Node Count**: Minimum 3 nodes for HA
-- **Container Runtime**: Docker 20.10+ or containerd 1.6+
+### Software Dependencies
+
+- Docker Engine 20.10+
+- Docker Compose 2.0+
+- Kubernetes 1.24+ (for production)
+- kubectl CLI
+- Helm 3.8+ (optional)
+- Git 2.30+
+- Python 3.10+
+- Node.js 18+ (for frontend development)
 - **Network Plugin**: Calico, Flannel, or Weave Net
 - **Storage**: Dynamic provisioning support (e.g., Ceph, AWS EBS)
 - **Ingress Controller**: NGINX Ingress Controller

@@ -1,0 +1,73 @@
+{
+  "name": "qflare-dashboard",
+  "version": "1.0.0",
+  "description": "QFLARE Quantum Federated Learning Administration Dashboard",
+  "private": true,
+  "dependencies": {
+    "@testing-library/jest-dom": "^5.16.4",
+    "@testing-library/react": "^13.3.0",
+    "@testing-library/user-event": "^13.5.0",
+    "@types/jest": "^27.5.2",
+    "@types/node": "^16.11.47",
+    "@types/react": "^18.0.15",
+    "@types/react-dom": "^18.0.6",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "react-scripts": "5.0.1",
+    "typescript": "^4.7.4",
+    "web-vitals": "^2.1.4",
+    "@mui/material": "^5.10.0",
+    "@mui/icons-material": "^5.10.0",
+    "@emotion/react": "^11.10.0",
+    "@emotion/styled": "^11.10.0",
+    "@mui/x-data-grid": "^5.15.0",
+    "@mui/x-charts": "^6.0.0",
+    "react-router-dom": "^6.3.0",
+    "axios": "^0.27.2",
+    "socket.io-client": "^4.5.0",
+    "recharts": "^2.5.0",
+    "react-query": "^3.39.0",
+    "date-fns": "^2.29.0",
+    "qrcode.react": "^3.1.0",
+    "react-hook-form": "^7.34.0",
+    "@hookform/resolvers": "^2.9.7",
+    "yup": "^0.32.11",
+    "react-hot-toast": "^2.3.0",
+    "framer-motion": "^7.2.0",
+    "react-helmet-async": "^1.3.0"
+  },
+  "scripts": {
+    "start": "react-scripts start",
+    "build": "react-scripts build",
+    "test": "react-scripts test",
+    "eject": "react-scripts eject",
+    "lint": "eslint src --ext .ts,.tsx",
+    "lint:fix": "eslint src --ext .ts,.tsx --fix",
+    "type-check": "tsc --noEmit"
+  },
+  "eslintConfig": {
+    "extends": [
+      "react-app",
+      "react-app/jest"
+    ]
+  },
+  "browserslist": {
+    "production": [
+      ">0.2%",
+      "not dead",
+      "not op_mini all"
+    ],
+    "development": [
+      "last 1 chrome version",
+      "last 1 firefox version",
+      "last 1 safari version"
+    ]
+  },
+  "devDependencies": {
+    "@types/qrcode.react": "^1.0.2",
+    "eslint": "^8.21.0",
+    "@typescript-eslint/eslint-plugin": "^5.32.0",
+    "@typescript-eslint/parser": "^5.32.0"
+  },
+  "proxy": "http://localhost:8000"
+}

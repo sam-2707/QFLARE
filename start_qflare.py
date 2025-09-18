@@ -17,13 +17,19 @@ def start_qflare_server():
     print("=" * 50)
     
     try:
-        # Change to server directory
-        server_dir = os.path.join(os.path.dirname(__file__), 'server')
+        # Add server directory to Python path
+        project_root = os.path.dirname(__file__)
+        server_dir = os.path.join(project_root, 'server')
+        
+        # Add both project root and server directory to Python path
+        sys.path.insert(0, project_root)
+        sys.path.insert(0, server_dir)
+        
+        print(f"✅ Added paths to Python: {project_root}, {server_dir}")
+        
+        # Change to server directory for file operations
         os.chdir(server_dir)
         print(f"✅ Changed to server directory: {server_dir}")
-        
-        # Add current directory to Python path
-        sys.path.insert(0, '.')
         
         # Import the main app
         from main import app

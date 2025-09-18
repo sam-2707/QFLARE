@@ -172,3 +172,45 @@ class HealthCheckResponse(BaseModel):
     timestamp: datetime = Field(..., description="Current timestamp")
     version: str = Field(..., description="API version")
     components: Dict[str, str] = Field(..., description="Component status")
+
+
+# Authentication Schemas
+class LoginRequest(BaseModel):
+    """Request model for user login."""
+    username: str = Field(..., min_length=3, max_length=50, description="Username")
+    password: str = Field(..., min_length=6, description="Password")
+    role: Optional[str] = Field(None, description="User role (admin/user)")
+    
+    @validator('username')
+    def validate_username(cls, v):
+        if not re.match(r'^[a-zA-Z0-9_-]+$', v):
+            raise ValueError('Username must contain only alphanumeric characters, underscores, and hyphens')
+        return v.lower()
+
+
+class LoginResponse(BaseModel):
+    """Response model for successful login."""
+    access_token: str = Field(..., description="JWT access token")
+    token_type: str = Field(default="bearer", description="Token type")
+    user: Dict[str, Any] = Field(..., description="User information")
+    expires_in: int = Field(..., description="Token expiration time in seconds")
+
+
+class UserInfoResponse(BaseModel):
+    """Response model for user information."""
+    user: Dict[str, Any] = Field(..., description="User details")
+    status: str = Field(..., description="Authentication status")
+
+
+class TokenValidationResponse(BaseModel):
+    """Response model for token validation."""
+    valid: bool = Field(..., description="Token validity status")
+    user: Optional[Dict[str, Any]] = Field(None, description="User information if token is valid")
+    message: str = Field(..., description="Validation message")
+
+
+class PermissionsResponse(BaseModel):
+    """Response model for user permissions."""
+    permissions: Dict[str, bool] = Field(..., description="User permission flags")
+    role: str = Field(..., description="User role")
+    username: str = Field(..., description="Username")

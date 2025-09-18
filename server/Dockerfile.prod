@@ -1,0 +1,50 @@
+# Production Dockerfile for QFLARE API Server
+FROM python:3.11-slim
+
+WORKDIR /app
+
+# Install system dependencies
+RUN apt-get update && apt-get install -y \
+    gcc \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copy requirements and install Python dependencies
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Install additional production dependencies
+RUN pip install \
+    uvicorn[standard] \
+    gunicorn \
+    slowapi \
+    prometheus-client \
+    aioredis \
+    asyncpg \
+    python-multipart \
+    qrcode[pil] \
+    python-jose[cryptography]
+
+# Copy application code
+COPY server/ ./server/
+COPY database/ ./database/
+COPY models/ ./models/
+COPY edge_node/auth/ ./edge_node/auth/
+
+# Create non-root user
+RUN useradd --create-home --shell /bin/bash qflare
+RUN chown -R qflare:qflare /app
+USER qflare
+
+# Create necessary directories
+RUN mkdir -p logs certificates
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=30s --start-period=5s --retries=3 \
+    CMD curl -f http://localhost:8000/api/v1/health || exit 1
+
+# Expose port
+EXPOSE 8000
+
+# Start server
+CMD ["gunicorn", "server.enhanced_server:app", "-w", "4", "-k", "uvicorn.workers.UvicornWorker", "--bind", "0.0.0.0:8000", "--log-level", "info"]

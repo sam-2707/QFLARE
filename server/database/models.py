@@ -1,214 +1,450 @@
+#!/usr/bin/env python3
 """
-Database Models for QFLARE Federated Learning System
-
-This module defines SQLAlchemy models for persistent storage of:
-- Device registry and metadata
-- Model updates and training history
-- Aggregation rounds and global models
-- User authentication and tokens
+QFLARE Production Database Models
+SQLAlchemy models for quantum key exchange system
 """
 
-import time
-from datetime import datetime
-from typing import Dict, Any, Optional
 from sqlalchemy import (
-    Column, Integer, String, Text, Float, Boolean, 
-    LargeBinary, DateTime, JSON, ForeignKey, Index
+    Column, String, Integer, Float, DateTime, Boolean, 
+    Text, LargeBinary, ForeignKey, Index, UniqueConstraint
 )
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship
+from sqlalchemy.dialects.postgresql import UUID, JSONB
 from sqlalchemy.sql import func
+from datetime import datetime, UTC
+import uuid
 
 Base = declarative_base()
 
-
 class Device(Base):
-    """Device registry table"""
+    """Device registration and management"""
     __tablename__ = 'devices'
     
-    device_id = Column(String(255), primary_key=True, index=True)
-    status = Column(String(50), default='active', index=True)
-    registered_at = Column(DateTime, default=func.now())
-    last_seen = Column(DateTime, default=func.now())
+    # Primary fields
+    device_id = Column(String(255), primary_key=True)
+    device_type = Column(String(50), nullable=False)  # EDGE_NODE, MOBILE_DEVICE, etc.
+    organization = Column(String(255), nullable=False)
+    location = Column(String(255))
     
-    # Post-quantum cryptographic keys
-    kem_public_key = Column(LargeBinary)
-    sig_public_key = Column(LargeBinary)
-    key_rotation_count = Column(Integer, default=0)
+    # Status and metadata
+    status = Column(String(20), nullable=False, default='pending')  # pending, approved, suspended, revoked
+    trust_score = Column(Float, default=0.0)
+    public_key = Column(LargeBinary)
+    capabilities = Column(Text)  # JSON string of device capabilities
     
-    # Device metadata
-    device_type = Column(String(100))
-    hardware_info = Column(JSON)
-    network_info = Column(JSON)
-    capabilities = Column(JSON)
+    # Timestamps
+    created_at = Column(DateTime(timezone=True), default=func.now())
+    updated_at = Column(DateTime(timezone=True), default=func.now(), onupdate=func.now())
+    last_seen = Column(DateTime(timezone=True))
+    approved_at = Column(DateTime(timezone=True))
     
-    # Training configuration
-    local_epochs = Column(Integer, default=1)
-    batch_size = Column(Integer, default=32)
-    learning_rate = Column(Float, default=0.01)
+    # Security fields
+    enrollment_token = Column(String(255))
+    certificate_fingerprint = Column(String(255))
+    security_level = Column(Integer, default=1)
     
     # Relationships
-    model_updates = relationship("ModelUpdate", back_populates="device")
-    training_sessions = relationship("TrainingSession", back_populates="device")
+    key_exchanges = relationship("KeyExchangeSession", back_populates="device")
+    audit_logs = relationship("AuditLog", back_populates="device")
     
-    def __repr__(self):
-        return f"<Device(device_id='{self.device_id}', status='{self.status}')>"
+    # Indexes
+    __table_args__ = (
+        Index('idx_device_status', 'status'),
+        Index('idx_device_organization', 'organization'),
+        Index('idx_device_created', 'created_at'),
+        Index('idx_device_last_seen', 'last_seen'),
+    )
+
+class KeyExchangeSession(Base):
+    """Quantum key exchange sessions"""
+    __tablename__ = 'key_exchange_sessions'
+    
+    # Primary fields
+    session_id = Column(String(255), primary_key=True)
+    device_id = Column(String(255), ForeignKey('devices.device_id'), nullable=False)
+    
+    # Cryptographic details
+    algorithm = Column(String(50), nullable=False, default='Kyber1024')
+    public_key = Column(LargeBinary)
+    encapsulated_secret = Column(LargeBinary)
+    shared_secret_hash = Column(String(255))  # Hash of shared secret for verification
+    
+    # Session metadata
+    status = Column(String(20), nullable=False, default='active')  # active, expired, revoked
+    created_at = Column(DateTime(timezone=True), default=func.now())
+    expires_at = Column(DateTime(timezone=True), nullable=False)
+    used_at = Column(DateTime(timezone=True))
+    
+    # Security and performance
+    security_level = Column(Integer, default=5)  # NIST security level
+    exchange_duration_ms = Column(Float)
+    client_ip = Column(String(45))  # IPv4/IPv6 address
+    user_agent = Column(String(500))
+    
+    # Temporal security
+    timestamp_derived = Column(Boolean, default=True)
+    nonce = Column(String(255))
+    time_window_seconds = Column(Integer, default=300)
+    
+    # Relationships
+    device = relationship("Device", back_populates="key_exchanges")
+    
+    # Indexes
+    __table_args__ = (
+        Index('idx_session_device', 'device_id'),
+        Index('idx_session_status', 'status'),
+        Index('idx_session_created', 'created_at'),
+        Index('idx_session_expires', 'expires_at'),
+        Index('idx_session_algorithm', 'algorithm'),
+    )
+
+class AuditLog(Base):
+    """Comprehensive audit logging"""
+    __tablename__ = 'audit_logs'
+    
+    # Primary fields
+    id = Column(String(255), primary_key=True, default=lambda: str(uuid.uuid4()))
+    device_id = Column(String(255), ForeignKey('devices.device_id'))
+    session_id = Column(String(255), ForeignKey('key_exchange_sessions.session_id'))
+    
+    # Event details
+    event_type = Column(String(50), nullable=False)
+    event_category = Column(String(50), nullable=False)  # SECURITY, PERFORMANCE, SYSTEM
+    severity = Column(String(20), nullable=False)  # DEBUG, INFO, WARN, ERROR, CRITICAL
+    message = Column(Text, nullable=False)
+    
+    # Context and metadata
+    event_data = Column(Text)  # JSON string with additional data
+    user_agent = Column(String(500))
+    client_ip = Column(String(45))
+    endpoint = Column(String(255))
+    
+    # Timestamps and identification
+    event_timestamp = Column(DateTime(timezone=True), default=func.now())
+    created_at = Column(DateTime(timezone=True), default=func.now())
+    
+    # Security fields
+    threat_level = Column(Integer, default=1)  # 1-10 threat severity
+    signature = Column(LargeBinary)  # Digital signature of log entry
+    signature_verified = Column(Boolean, default=False)
+    
+    # Relationships
+    device = relationship("Device", back_populates="audit_logs")
+    
+    # Indexes
+    __table_args__ = (
+        Index('idx_audit_device', 'device_id'),
+        Index('idx_audit_event_type', 'event_type'),
+        Index('idx_audit_severity', 'severity'),
+        Index('idx_audit_timestamp', 'event_timestamp'),
+        Index('idx_audit_threat_level', 'threat_level'),
+        Index('idx_audit_category', 'event_category'),
+    )
+
+class SecurityEvent(Base):
+    """Security incidents and threat detection"""
+    __tablename__ = 'security_events'
+    
+    # Primary fields
+    id = Column(String(255), primary_key=True, default=lambda: str(uuid.uuid4()))
+    device_id = Column(String(255), ForeignKey('devices.device_id'))
+    session_id = Column(String(255), ForeignKey('key_exchange_sessions.session_id'))
+    
+    # Threat details
+    threat_type = Column(String(50), nullable=False)  # QUANTUM_ATTACK, ANOMALOUS_BEHAVIOR, etc.
+    threat_category = Column(String(50), nullable=False)
+    severity = Column(String(20), nullable=False)
+    confidence = Column(Float, default=0.0)  # 0-1 confidence score
+    
+    # Detection details
+    detection_method = Column(String(100))
+    indicators = Column(Text)  # JSON string of threat indicators
+    mitigation_applied = Column(Text)  # Actions taken
+    
+    # Status and resolution
+    status = Column(String(20), default='detected')  # detected, investigating, resolved, false_positive
+    resolved_at = Column(DateTime(timezone=True))
+    resolution_notes = Column(Text)
+    
+    # Timestamps
+    detected_at = Column(DateTime(timezone=True), default=func.now())
+    created_at = Column(DateTime(timezone=True), default=func.now())
+    updated_at = Column(DateTime(timezone=True), default=func.now(), onupdate=func.now())
+    
+    # Context
+    context_data = Column(Text)  # JSON string with additional context
+    
+    # Indexes
+    __table_args__ = (
+        Index('idx_security_device', 'device_id'),
+        Index('idx_security_threat_type', 'threat_type'),
+        Index('idx_security_severity', 'severity'),
+        Index('idx_security_detected', 'detected_at'),
+        Index('idx_security_status', 'status'),
+    )
+
+class PerformanceMetric(Base):
+    """System and cryptographic performance metrics"""
+    __tablename__ = 'performance_metrics'
+    
+    # Primary fields
+    id = Column(String(255), primary_key=True, default=lambda: str(uuid.uuid4()))
+    metric_type = Column(String(50), nullable=False)  # KEY_EXCHANGE, API_RESPONSE, SYSTEM_RESOURCE
+    metric_name = Column(String(100), nullable=False)
+    
+    # Metric values
+    value = Column(Float, nullable=False)
+    unit = Column(String(20))  # ms, bytes, percent, count
+    
+    # Context
+    device_id = Column(String(255), ForeignKey('devices.device_id'))
+    session_id = Column(String(255), ForeignKey('key_exchange_sessions.session_id'))
+    component = Column(String(100))  # Which system component
+    
+    # Additional data
+    metric_metadata = Column(Text)  # JSON string with additional metric data
+    
+    # Timestamps
+    measured_at = Column(DateTime(timezone=True), default=func.now())
+    created_at = Column(DateTime(timezone=True), default=func.now())
+    
+    # Indexes
+    __table_args__ = (
+        Index('idx_metric_type', 'metric_type'),
+        Index('idx_metric_name', 'metric_name'),
+        Index('idx_metric_measured', 'measured_at'),
+        Index('idx_metric_device', 'device_id'),
+        Index('idx_metric_component', 'component'),
+    )
+
+class EnrollmentToken(Base):
+    """Device enrollment tokens"""
+    __tablename__ = 'enrollment_tokens'
+    
+    # Primary fields
+    id = Column(String(255), primary_key=True, default=lambda: str(uuid.uuid4()))
+    token = Column(String(255), nullable=False, unique=True)
+    
+    # Token details
+    organization = Column(String(255), nullable=False)
+    device_type = Column(String(50), nullable=False)
+    max_uses = Column(Integer, default=1)
+    used_count = Column(Integer, default=0)
+    
+    # Status and expiry
+    status = Column(String(20), default='active')  # active, expired, revoked, exhausted
+    created_at = Column(DateTime(timezone=True), default=func.now())
+    expires_at = Column(DateTime(timezone=True), nullable=False)
+    
+    # Usage tracking
+    first_used_at = Column(DateTime(timezone=True))
+    last_used_at = Column(DateTime(timezone=True))
+    used_by_devices = Column(Text)  # JSON array of device IDs that used this token
+    
+    # Creator info
+    created_by = Column(String(255))  # Admin user who created the token
+    notes = Column(Text)
+    
+    # Indexes
+    __table_args__ = (
+        Index('idx_token_status', 'status'),
+        Index('idx_token_organization', 'organization'),
+        Index('idx_token_expires', 'expires_at'),
+        Index('idx_token_created', 'created_at'),
+        UniqueConstraint('token', name='uq_enrollment_token'),
+    )
+
+class SystemConfiguration(Base):
+    """System-wide configuration and settings"""
+    __tablename__ = 'system_configuration'
+    
+    # Primary fields
+    key = Column(String(100), primary_key=True)
+    value = Column(Text, nullable=False)
+    data_type = Column(String(20), default='string')  # string, integer, float, boolean, json
+    
+    # Metadata
+    category = Column(String(50), nullable=False)  # SECURITY, PERFORMANCE, QUANTUM, SYSTEM
+    description = Column(Text)
+    default_value = Column(Text)
+    
+    # Validation and constraints
+    min_value = Column(Float)
+    max_value = Column(Float)
+    allowed_values = Column(Text)  # JSON array of allowed values
+    validation_regex = Column(String(255))
+    
+    # Change tracking
+    created_at = Column(DateTime(timezone=True), default=func.now())
+    updated_at = Column(DateTime(timezone=True), default=func.now(), onupdate=func.now())
+    last_modified_by = Column(String(255))
+    
+    # Security
+    requires_restart = Column(Boolean, default=False)
+    is_sensitive = Column(Boolean, default=False)  # Don't log changes to sensitive configs
+    
+    # Indexes
+    __table_args__ = (
+        Index('idx_config_category', 'category'),
+        Index('idx_config_updated', 'updated_at'),
+    )
+
+# Database metadata for migrations
+database_metadata = Base.metadata
 
 
 class GlobalModel(Base):
-    """Global model versions and metadata"""
+    """Global federated learning model storage"""
     __tablename__ = 'global_models'
     
+    # Primary fields
     id = Column(Integer, primary_key=True, autoincrement=True)
-    round_number = Column(Integer, index=True)
-    model_weights = Column(LargeBinary)
-    model_hash = Column(String(64), index=True)
+    round_number = Column(Integer, nullable=False)
+    model_data = Column(LargeBinary, nullable=False)  # Serialized model weights
+    model_hash = Column(String(64), nullable=False)  # SHA256 hash for integrity
     
-    # Model metadata
-    model_type = Column(String(100))
-    model_architecture = Column(JSON)
+    # Metadata
+    algorithm = Column(String(50), default='FedAvg')
+    num_participants = Column(Integer, nullable=False)
     accuracy = Column(Float)
     loss = Column(Float)
     
-    # Aggregation info
-    num_participants = Column(Integer)
-    aggregation_method = Column(String(50), default='fedavg')
-    created_at = Column(DateTime, default=func.now())
+    # Timestamps
+    created_at = Column(DateTime(timezone=True), default=func.now())
+    aggregated_at = Column(DateTime(timezone=True))
     
-    # Relationships
-    model_updates = relationship("ModelUpdate", back_populates="global_model")
+    # Performance metrics
+    training_time = Column(Float)  # Training time in seconds
+    model_size = Column(Integer)   # Model size in bytes
     
-    def __repr__(self):
-        return f"<GlobalModel(round={self.round_number}, participants={self.num_participants})>"
+    # Indexes
+    __table_args__ = (
+        Index('idx_global_model_round', 'round_number'),
+        Index('idx_global_model_created', 'created_at'),
+        UniqueConstraint('round_number', name='uq_global_model_round'),
+    )
 
 
 class ModelUpdate(Base):
-    """Individual model updates from devices"""
+    """Individual device model updates for federated learning"""
     __tablename__ = 'model_updates'
     
+    # Primary fields
     id = Column(Integer, primary_key=True, autoincrement=True)
-    device_id = Column(String(255), ForeignKey('devices.device_id'), index=True)
-    global_model_id = Column(Integer, ForeignKey('global_models.id'), index=True)
+    device_id = Column(String(255), ForeignKey('devices.device_id'), nullable=False)
+    round_number = Column(Integer, nullable=False)
     
-    # Update data
-    model_weights = Column(LargeBinary)
-    model_hash = Column(String(64))
-    signature = Column(LargeBinary)  # Post-quantum signature
+    # Model data
+    model_delta = Column(LargeBinary, nullable=False)  # Model weight updates
+    delta_hash = Column(String(64), nullable=False)   # SHA256 hash
     
-    # Training metrics
-    local_loss = Column(Float)
+    # Training metadata
+    local_epochs = Column(Integer, nullable=False)
+    batch_size = Column(Integer, nullable=False)
+    learning_rate = Column(Float, nullable=False)
+    num_samples = Column(Integer, nullable=False)
+    
+    # Performance metrics
     local_accuracy = Column(Float)
-    local_epochs = Column(Integer)
-    samples_count = Column(Integer)
+    local_loss = Column(Float)
     training_time = Column(Float)
     
-    # Timestamps
-    created_at = Column(DateTime, default=func.now())
-    aggregated_at = Column(DateTime)
-    
     # Status tracking
-    status = Column(String(50), default='pending')  # pending, validated, aggregated, rejected
-    validation_score = Column(Float)
+    status = Column(String(20), default='pending')  # pending, validated, rejected, aggregated
+    validation_score = Column(Float)  # Cosine similarity or other validation metric
+    
+    # Timestamps
+    submitted_at = Column(DateTime(timezone=True), default=func.now())
+    processed_at = Column(DateTime(timezone=True))
     
     # Relationships
     device = relationship("Device", back_populates="model_updates")
-    global_model = relationship("GlobalModel", back_populates="model_updates")
     
-    def __repr__(self):
-        return f"<ModelUpdate(device='{self.device_id}', status='{self.status}')>"
+    # Indexes
+    __table_args__ = (
+        Index('idx_model_update_device', 'device_id'),
+        Index('idx_model_update_round', 'round_number'),
+        Index('idx_model_update_status', 'status'),
+        Index('idx_model_update_submitted', 'submitted_at'),
+    )
 
 
 class TrainingSession(Base):
-    """Training sessions and rounds"""
+    """Federated learning training session management"""
     __tablename__ = 'training_sessions'
     
+    # Primary fields
     id = Column(Integer, primary_key=True, autoincrement=True)
-    session_id = Column(String(255), unique=True, index=True)
-    device_id = Column(String(255), ForeignKey('devices.device_id'), index=True)
+    session_id = Column(String(64), unique=True, nullable=False)
+    round_number = Column(Integer, nullable=False)
     
     # Session configuration
-    dataset_name = Column(String(100))
-    model_type = Column(String(100))
-    hyperparameters = Column(JSON)
+    target_participants = Column(Integer, nullable=False)
+    min_participants = Column(Integer, nullable=False)
+    max_participants = Column(Integer, nullable=False)
     
-    # Session status
-    status = Column(String(50), default='active')  # active, completed, failed, suspended
-    started_at = Column(DateTime, default=func.now())
-    completed_at = Column(DateTime)
+    # Training parameters
+    global_epochs = Column(Integer, default=1)
+    local_epochs = Column(Integer, default=1)
+    learning_rate = Column(Float, default=0.01)
+    batch_size = Column(Integer, default=32)
     
-    # Training progress
-    current_round = Column(Integer, default=0)
-    total_rounds = Column(Integer)
-    last_update_at = Column(DateTime)
+    # Status and progress
+    status = Column(String(20), default='initializing')  # initializing, recruiting, training, aggregating, completed, failed
+    enrolled_devices = Column(Integer, default=0)
+    completed_updates = Column(Integer, default=0)
     
-    # Performance metrics
-    best_accuracy = Column(Float)
-    current_loss = Column(Float)
-    convergence_score = Column(Float)
+    # Timing
+    started_at = Column(DateTime(timezone=True), default=func.now())
+    deadline = Column(DateTime(timezone=True))
+    completed_at = Column(DateTime(timezone=True))
     
-    # Relationships
-    device = relationship("Device", back_populates="training_sessions")
+    # Results
+    final_accuracy = Column(Float)
+    final_loss = Column(Float)
+    convergence_achieved = Column(Boolean, default=False)
     
-    def __repr__(self):
-        return f"<TrainingSession(session='{self.session_id}', status='{self.status}')>"
-
-
-class AuditLog(Base):
-    """Security and operation audit logs"""
-    __tablename__ = 'audit_logs'
-    
-    id = Column(Integer, primary_key=True, autoincrement=True)
-    device_id = Column(String(255), index=True)
-    
-    # Event details
-    event_type = Column(String(100), index=True)  # registration, update, aggregation, error
-    event_description = Column(Text)
-    event_data = Column(JSON)
-    
-    # Security context
-    ip_address = Column(String(45))  # IPv6 compatible
-    user_agent = Column(Text)
-    auth_method = Column(String(50))
-    
-    # Timestamps
-    timestamp = Column(DateTime, default=func.now(), index=True)
-    
-    # Risk assessment
-    risk_level = Column(String(20), default='low')  # low, medium, high, critical
-    
-    def __repr__(self):
-        return f"<AuditLog(event='{self.event_type}', risk='{self.risk_level}')>"
+    # Indexes
+    __table_args__ = (
+        Index('idx_training_session_round', 'round_number'),
+        Index('idx_training_session_status', 'status'),
+        Index('idx_training_session_started', 'started_at'),
+        UniqueConstraint('session_id', name='uq_training_session_id'),
+    )
 
 
 class UserToken(Base):
-    """User authentication tokens and API keys"""
+    """User authentication tokens"""
     __tablename__ = 'user_tokens'
     
+    # Primary fields
     id = Column(Integer, primary_key=True, autoincrement=True)
-    token_hash = Column(String(64), unique=True, index=True)
-    device_id = Column(String(255), ForeignKey('devices.device_id'), index=True)
+    user_id = Column(String(255), nullable=False)
+    token_hash = Column(String(64), nullable=False)  # SHA256 hash of token
     
     # Token metadata
-    token_type = Column(String(50))  # enrollment, api, refresh
-    permissions = Column(JSON)
+    token_type = Column(String(20), default='access')  # access, refresh, session
+    scope = Column(String(255))  # Permissions scope
     
-    # Lifecycle
-    created_at = Column(DateTime, default=func.now())
-    expires_at = Column(DateTime)
-    last_used_at = Column(DateTime)
+    # Expiration
+    expires_at = Column(DateTime(timezone=True), nullable=False)
+    created_at = Column(DateTime(timezone=True), default=func.now())
+    last_used = Column(DateTime(timezone=True))
     
-    # Status
-    is_active = Column(Boolean, default=True)
-    revoked_at = Column(DateTime)
-    revocation_reason = Column(String(255))
+    # Security
+    ip_address = Column(String(45))  # IPv6 compatible
+    user_agent = Column(Text)
+    is_revoked = Column(Boolean, default=False)
     
-    def __repr__(self):
-        return f"<UserToken(type='{self.token_type}', active={self.is_active})>"
+    # Indexes
+    __table_args__ = (
+        Index('idx_user_token_user', 'user_id'),
+        Index('idx_user_token_expires', 'expires_at'),
+        Index('idx_user_token_type', 'token_type'),
+        UniqueConstraint('token_hash', name='uq_user_token_hash'),
+    )
 
 
-# Indexes for performance optimization
-Index('idx_device_status_lastseen', Device.status, Device.last_seen)
-Index('idx_model_update_device_created', ModelUpdate.device_id, ModelUpdate.created_at)
-Index('idx_global_model_round', GlobalModel.round_number)
-Index('idx_audit_log_timestamp_type', AuditLog.timestamp, AuditLog.event_type)
-Index('idx_training_session_device_status', TrainingSession.device_id, TrainingSession.status)
+# Update the Device model to include the relationship
+Device.model_updates = relationship("ModelUpdate", back_populates="device")

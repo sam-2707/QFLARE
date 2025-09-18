@@ -1,34 +1,94 @@
+#!/usr/bin/env python3
 """
-Database Package for QFLARE
-
-This package provides database abstraction layer with:
-- SQLAlchemy models for all entities
-- Connection management for SQLite/PostgreSQL
-- High-level service layer for business operations
-- Audit logging and security tracking
+QFLARE Database Package
+Production database layer for quantum key exchange system
 """
 
-from .connection import initialize_database, get_database, cleanup_database
-from .models import Device, GlobalModel, ModelUpdate, TrainingSession, AuditLog, UserToken
-from .services import DeviceService, ModelService, AuditService, TrainingService
+from .connection import (
+    DatabaseManager,
+    DatabaseConfig,
+    db_manager,
+    init_database,
+    close_database,
+    get_database_health,
+    get_async_db_session,
+    database_transaction
+)
+
+from .models import (
+    Base,
+    Device,
+    KeyExchangeSession,
+    AuditLog,
+    SecurityEvent,
+    PerformanceMetric,
+    EnrollmentToken,
+    SystemConfiguration,
+    GlobalModel,
+    ModelUpdate,
+    TrainingSession,
+    UserToken
+)
+
+from .repository import (
+    DeviceRepository,
+    KeyExchangeRepository,
+    AuditRepository, 
+    ConfigurationRepository,
+    quick_device_lookup,
+    quick_session_lookup,
+    security_audit_log
+)
+
+from .services import (
+    DeviceService,
+    ModelService,
+    AuditService,
+    TrainingService
+)
 
 __all__ = [
     # Connection management
-    'initialize_database',
-    'get_database', 
-    'cleanup_database',
+    'DatabaseManager',
+    'DatabaseConfig', 
+    'db_manager',
+    'init_database',
+    'close_database',
+    'get_database_health',
+    'get_async_db_session',
+    'database_transaction',
     
     # Models
+    'Base',
     'Device',
+    'KeyExchangeSession', 
+    'AuditLog',
+    'SecurityEvent',
+    'PerformanceMetric',
+    'EnrollmentToken',
+    'SystemConfiguration',
     'GlobalModel',
     'ModelUpdate', 
     'TrainingSession',
-    'AuditLog',
     'UserToken',
+    
+    # Repositories
+    'DeviceRepository',
+    'KeyExchangeRepository',
+    'AuditRepository', 
+    'ConfigurationRepository',
     
     # Services
     'DeviceService',
     'ModelService',
-    'AuditService',
-    'TrainingService'
+    'AuditService', 
+    'TrainingService',
+    
+    # Convenience functions
+    'quick_device_lookup',
+    'quick_session_lookup',
+    'security_audit_log'
 ]
+
+# Version info
+__version__ = '1.0.0'

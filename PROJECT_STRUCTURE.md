@@ -1,33 +1,52 @@
-# 🧹 QFLARE Project Structure (Cleaned)
+# 🧹 QFLARE Project Structure (Cleaned & Organized)
 
 ## 📁 **Project Overview**
 
-The QFLARE project has been cleaned up to remove unnecessary and redundant files. Here's the current structure:
+The QFLARE project has been cleaned up to remove unnecessary files, duplicates, and organize all components properly. Here's the current clean structure:
 
 ## 📂 **Essential Files & Directories**
 
 ### **Root Level:**
 ```
 QFLARE_Project_Structure/
+├── .env.example                   # Environment variables template
+├── .env.prod                      # Production environment variables  
 ├── .git/                          # Git repository
-├── server/                        # Main server application
-├── tests/                         # Core test files
-├── docs/                          # Project documentation
+├── .github/                       # GitHub workflows and templates
+├── .gitignore                     # Git ignore patterns
+├── alembic.ini                    # Database migration configuration
+├── common/                        # Shared utilities across modules
 ├── config/                        # Configuration files
+├── data/                          # Database files and data storage
+├── deploy.bat/.sh                 # Deployment scripts
+├── docker/                        # Docker-related files
+├── docker-compose.yml             # Docker development config
+├── docker-compose.prod.yml        # Docker production config
+├── Dockerfile.prod                # Production Docker image
+├── docs/                          # Project documentation
 ├── edge_node/                     # Edge node implementation
-├── liboqs/                        # Quantum cryptography library
-├── liboqs-python/                 # Python bindings for liboqs
-├── scripts/                       # Utility scripts
 ├── enclaves/                      # Secure enclave implementations
-├── models/                        # ML models
-├── README.md                      # Project documentation
-├── requirements.txt               # Python dependencies
-├── docker-compose.yml            # Docker configuration
-├── LICENSE                        # License file
+├── frontend/                      # Web frontend components (if any)
+├── k8s/                           # Kubernetes manifests
+├── liboqs/                        # Post-quantum cryptography library
+├── liboqs-python/                 # Python bindings for liboqs
+├── models/                        # ML model definitions
+├── monitoring/                    # System monitoring and metrics
+├── qflare-env/                    # Python virtual environment
+├── quantum_key_overview.md        # Quantum cryptography overview
+├── quantum_key_usage_guide.md     # Quantum key usage guide
+├── README.md                      # Main project documentation
+├── requirements.txt               # Development dependencies
+├── requirements.prod.txt          # Production dependencies
+├── scripts/                       # Utility and setup scripts
+├── security/                      # Security tools and configurations
+├── server/                        # Main server application ⭐
 ├── setup.py                       # Package setup
-├── TROUBLESHOOTING.md            # Troubleshooting guide
-├── quantum_key_usage_guide.md    # Quantum key usage guide
-└── quantum_key_overview.md       # Quantum key overview
+├── start_qflare.py               # Main startup script ⭐
+├── tests/                         # Test suites
+├── TROUBLESHOOTING.md            # Common issues and solutions
+├── PROJECT_STATUS.md             # Current development status
+└── PROJECT_STRUCTURE.md          # This file
 ```
 
 ### **Server Directory (`server/`):**
