@@ -98,7 +98,7 @@ services:
     networks:
       - qflare-dev
     ports:
-      - "8001:8001"
+      - "8000:8000"
     command: python3 -m edge_node.main --dev
     restart: unless-stopped
 

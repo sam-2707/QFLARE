@@ -405,13 +405,13 @@ if __name__ == "__main__":
     
     print("🚀 Starting QFLARE Server v2.0 (Database-Integrated)")
     print("📊 Features: Quantum-Safe Crypto + Production Database")
-    print("🔗 URL: http://localhost:8001")
-    print("📖 API Docs: http://localhost:8001/api/docs")
+    print("🔗 URL: http://localhost:8000")
+    print("📖 API Docs: http://localhost:8000/api/docs")
     
     uvicorn.run(
         "main_db:app",
         host="0.0.0.0",
-        port=8001,
+        port=8000,
         reload=True,
         log_level="info"
     )

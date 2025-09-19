@@ -362,8 +362,8 @@ spec:
         - name: QFLARE_LOG_LEVEL
           value: "INFO"
         ports:
-        - containerPort: 8001
-          hostPort: 8001
+        - containerPort: 8000
+          hostPort: 8000
         volumeMounts:
         - name: edge-data
           mountPath: /app/data
@@ -379,13 +379,13 @@ spec:
         livenessProbe:
           httpGet:
             path: /health
-            port: 8001
+            port: 8000
           initialDelaySeconds: 30
           periodSeconds: 60
         readinessProbe:
           httpGet:
             path: /health
-            port: 8001
+            port: 8000
           initialDelaySeconds: 10
           periodSeconds: 30
         securityContext:

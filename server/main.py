@@ -23,7 +23,7 @@ from datetime import datetime
 from api.routes import router as api_router
 from fl_core.client_manager import register_client
 from registry import register_device, get_registered_devices
-from database import initialize_database, cleanup_database
+from database import init_database, close_database
 
 # Configure logging
 # 
@@ -58,7 +58,7 @@ async def startup_event():
             "database_type": "sqlite",
             "sqlite_path": "qflare.db"
         }
-        initialize_database(db_config)
+        await init_database()
         logger.info("Database initialized successfully")
     except Exception as e:
         logger.error(f"Failed to initialize database: {e}")
@@ -69,7 +69,7 @@ async def startup_event():
 async def shutdown_event():
     """Cleanup database connections on server shutdown."""
     try:
-        cleanup_database()
+        await close_database()
         logger.info("Database connections cleaned up")
     except Exception as e:
         logger.error(f"Error cleaning up database: {e}")

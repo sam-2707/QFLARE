@@ -171,9 +171,9 @@ services:
     networks:
       - qflare-network
     ports:
-      - "8001:8001"
+      - "8000:8000"
     healthcheck:
-      test: ["CMD", "python3", "-c", "import requests; requests.get('http://localhost:8001/health')"]
+      test: ["CMD", "python3", "-c", "import requests; requests.get('http://localhost:8000/health')"]
       interval: 60s
       timeout: 10s
       retries: 3

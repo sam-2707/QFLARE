@@ -39,7 +39,7 @@ data:
             regex: qflare-edge
           - source_labels: [__meta_kubernetes_pod_ip]
             target_label: __address__
-            replacement: ${1}:8001
+            replacement: ${1}:8000
 
       # Kubernetes Components
       - job_name: 'kubernetes-pods'

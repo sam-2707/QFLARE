@@ -26,7 +26,6 @@ from dataclasses import dataclass, asdict
 from enum import Enum
 from pathlib import Path
 import cpuinfo
-
 from .mock_enclave import MockSecureEnclave, ModelUpdate
 from .sgx_enclave import (
     SGXSecureEnclave, SGXConfig, SecureModelUpdate, 

@@ -95,13 +95,13 @@ ENV QFLARE_DEVICE_TYPE=edge
 
 # Health check
 HEALTHCHECK --interval=60s --timeout=10s --start-period=30s --retries=3 \
-    CMD python3 -c "import requests; requests.get('http://localhost:8001/health')" || exit 1
+    CMD python3 -c "import requests; requests.get('http://localhost:8000/health')" || exit 1
 
 # Switch to non-root user
 USER qflare
 
 # Expose port
-EXPOSE 8001
+EXPOSE 8000
 
 # Start the edge node
 CMD ["python3", "-m", "edge_node.main"]
