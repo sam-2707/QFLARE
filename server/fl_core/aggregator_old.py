@@ -10,8 +10,8 @@ import base64
 from typing import List, Dict, Any, Optional
 from datetime import datetime
 
-from server.enclave.mock_enclave import get_secure_enclave, ModelUpdate
-from server.database import ModelService, AuditService
+from enclave.mock_enclave import get_secure_enclave, ModelUpdate
+from database import ModelService, AuditService
 
 logger = logging.getLogger(__name__)
 

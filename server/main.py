@@ -25,6 +25,12 @@ from fl_core.client_manager import register_client
 from registry import register_device, get_registered_devices
 from database import init_database, close_database
 
+# Import secure key exchange
+import sys
+import os
+sys.path.append(os.path.join(os.path.dirname(__file__), '..', 'scripts'))
+from secure_key_exchange import SecureKeyExchange
+
 # Configure logging
 # 
 # # Configure logging
@@ -314,6 +320,295 @@ async def register_device_legacy(request: Request):
                 "location": location if 'location' in locals() else "",
                 "description": description if 'description' in locals() else "",
                 "capabilities": capabilities if 'capabilities' in locals() else ""
+            }
+        )
+
+
+# =============================================================================
+# SECURE REGISTRATION ENDPOINTS
+# =============================================================================
+
+# Initialize secure key exchange
+secure_key_exchange = None
+
+try:
+    from secure_key_exchange import get_secure_key_exchange
+    secure_key_exchange = get_secure_key_exchange()
+    logger.info("✅ Secure key exchange initialized")
+except Exception as e:
+    logger.warning(f"⚠️ Secure key exchange not available: {e}")
+
+
+@app.get("/secure-register", response_class=HTMLResponse)
+@limiter.limit("10/minute")
+async def secure_register_form(request: Request):
+    """Serve the secure registration page with MITM attack prevention."""
+    return templates.TemplateResponse(
+        "secure_register.html", 
+        {"request": request, "timestamp": int(time.time())}
+    )
+
+
+@app.post("/api/secure_register")
+@limiter.limit("5/minute")
+async def process_secure_registration(request: Request):
+    """Process secure registration request with chosen key exchange method."""
+    try:
+        form = await request.form()
+        
+        # Extract form data
+        device_id = form.get("device_id", "").strip()
+        device_type = form.get("device_type", "").strip()
+        organization = form.get("organization", "").strip()
+        contact_email = form.get("contact_email", "").strip()
+        use_case = form.get("use_case", "").strip()
+        key_exchange_method = form.get("key_exchange_method", "").strip()
+        
+        # Validate required fields
+        if not all([device_id, device_type, organization, contact_email, use_case, key_exchange_method]):
+            return templates.TemplateResponse(
+                "secure_register.html",
+                {
+                    "request": request,
+                    "error": "All fields are required",
+                    "timestamp": int(time.time())
+                }
+            )
+        
+        # Check if secure key exchange is available
+        if not secure_key_exchange:
+            return templates.TemplateResponse(
+                "secure_register.html",
+                {
+                    "request": request,
+                    "error": "Secure key exchange service is not available. Please contact administrator.",
+                    "timestamp": int(time.time())
+                }
+            )
+        
+        # Prepare user request data
+        user_request = {
+            "device_id": device_id,
+            "device_type": device_type,
+            "organization": organization,
+            "email": contact_email,
+            "use_case": use_case,
+            "contact_info": form.get("contact_info", ""),
+            "secure_contact": form.get("secure_contact", ""),
+            "pgp_public_key": form.get("pgp_public_key", ""),
+            "delivery_address": form.get("delivery_address", ""),
+            "delivery_method": form.get("delivery_method", "")
+        }
+        
+        # Process based on selected method
+        result = None
+        success_message = ""
+        
+        if key_exchange_method == "qr_otp":
+            result = secure_key_exchange.method_1_qr_code_with_otp(user_request)
+            success_message = f"""
+            🔐 <strong>QR Code + OTP Method Initiated</strong><br>
+            • QR Code file: {result['qr_code_file']}<br>
+            • One-Time Password: <strong>{result['otp']}</strong><br>
+            • Expires in: {result['expires_in']//60} minutes<br>
+            <br>
+            📱 <strong>Next Steps:</strong><br>
+            1. Admin will provide QR code via secure channel<br>
+            2. You will receive OTP via {user_request.get('secure_contact', 'secure channel')}<br>
+            3. Scan QR code and enter OTP to decrypt your quantum keys
+            """
+            
+        elif key_exchange_method == "pgp_email":
+            if not user_request['pgp_public_key']:
+                return templates.TemplateResponse(
+                    "secure_register.html",
+                    {
+                        "request": request,
+                        "error": "PGP public key is required for this method",
+                        "timestamp": int(time.time())
+                    }
+                )
+            result = secure_key_exchange.method_2_secure_email_with_pgp(user_request)
+            success_message = f"""
+            📧 <strong>PGP Email Method Initiated</strong><br>
+            • Encrypted keys prepared for: {contact_email}<br>
+            • Encryption: Your PGP public key<br>
+            <br>
+            📬 <strong>Next Steps:</strong><br>
+            1. Admin will send encrypted keys to your email<br>
+            2. Decrypt the email using your PGP private key<br>
+            3. Install the quantum keys on your device
+            """
+            
+        elif key_exchange_method == "totp":
+            result = secure_key_exchange.method_3_totp_based_exchange(user_request)
+            success_message = f"""
+            🔐 <strong>TOTP Method Initiated</strong><br>
+            • TOTP Secret: <strong>{result['totp_secret']}</strong><br>
+            • Device ID: {result['device_id']}<br>
+            <br>
+            📱 <strong>Next Steps:</strong><br>
+            1. Admin will provide TOTP secret via secure channel<br>
+            2. Set up authenticator app with the secret<br>
+            3. Use current TOTP code to authenticate and receive keys
+            """
+            
+        elif key_exchange_method == "physical_token":
+            result = secure_key_exchange.method_4_physical_token_exchange(user_request)
+            success_message = f"""
+            🔑 <strong>Physical Token Method Initiated</strong><br>
+            • Token File: {result['token_file']}<br>
+            • Token PIN: <strong>{result['token_pin']}</strong><br>
+            • Delivery: {user_request.get('delivery_method', 'Secure delivery')}<br>
+            <br>
+            📦 <strong>Next Steps:</strong><br>
+            1. Physical token will be delivered to your address<br>
+            2. Enter the token PIN to decrypt your quantum keys<br>
+            3. Install keys on your device
+            """
+            
+        elif key_exchange_method == "blockchain":
+            result = secure_key_exchange.method_5_blockchain_verification(user_request)
+            success_message = f"""
+            ⛓️ <strong>Blockchain Verification Method Initiated</strong><br>
+            • Transaction: {result['tx_hash'][:16]}...<br>
+            • Block Height: {result['block_height']}<br>
+            • Key Fingerprint: {result['key_fingerprint'][:16]}...<br>
+            <br>
+            🔗 <strong>Next Steps:</strong><br>
+            1. Keys will be delivered via HTTPS<br>
+            2. Verify key fingerprint against blockchain record<br>
+            3. Install verified keys on your device
+            """
+        
+        else:
+            return templates.TemplateResponse(
+                "secure_register.html",
+                {
+                    "request": request,
+                    "error": "Invalid key exchange method selected",
+                    "timestamp": int(time.time())
+                }
+            )
+        
+        # Log the registration attempt
+        logger.info(f"Secure registration initiated: {device_id} ({key_exchange_method})")
+        
+        return templates.TemplateResponse(
+            "secure_register.html",
+            {
+                "request": request,
+                "success": success_message,
+                "method_used": key_exchange_method,
+                "device_id": device_id,
+                "timestamp": int(time.time())
+            }
+        )
+        
+    except Exception as e:
+        logger.error(f"Error in secure registration: {e}")
+        return templates.TemplateResponse(
+            "secure_register.html",
+            {
+                "request": request,
+                "error": f"Registration failed: {str(e)}",
+                "timestamp": int(time.time())
+            }
+        )
+
+
+@app.get("/secure-verify/{device_id}")
+@limiter.limit("10/minute")
+async def secure_verification_page(request: Request, device_id: str):
+    """Serve verification page for completing key exchange."""
+    if not secure_key_exchange:
+        raise HTTPException(status_code=503, detail="Secure key exchange service not available")
+    
+    # Check if device has pending registration
+    if device_id not in secure_key_exchange.pending_registrations:
+        raise HTTPException(status_code=404, detail="No pending registration found for this device")
+    
+    registration = secure_key_exchange.pending_registrations[device_id]
+    method = registration['method']
+    
+    return templates.TemplateResponse(
+        "secure_verify.html",
+        {
+            "request": request,
+            "device_id": device_id,
+            "method": method,
+            "timestamp": int(time.time())
+        }
+    )
+
+
+@app.post("/api/secure_verify/{device_id}")
+@limiter.limit("5/minute")
+async def process_secure_verification(request: Request, device_id: str):
+    """Process verification and deliver quantum keys."""
+    try:
+        if not secure_key_exchange:
+            raise HTTPException(status_code=503, detail="Secure key exchange service not available")
+        
+        form = await request.form()
+        verification_data = {}
+        
+        # Extract verification data based on method
+        if "otp" in form:
+            verification_data["otp"] = form.get("otp")
+        if "totp_code" in form:
+            verification_data["totp_code"] = form.get("totp_code")
+        if "token_pin" in form:
+            verification_data["token_pin"] = form.get("token_pin")
+        
+        # Verify and deliver keys
+        quantum_keys = secure_key_exchange.verify_and_deliver_keys(device_id, verification_data)
+        
+        # Register device in QFLARE system
+        device_info = {
+            "device_id": device_id,
+            "device_type": "secure_enrolled",
+            "location": "Securely enrolled",
+            "description": f"Device enrolled via secure key exchange",
+            "capabilities": ["quantum_safe", "federated_learning"],
+            "quantum_keys": quantum_keys
+        }
+        
+        # Store in registry
+        register_device(device_info)
+        
+        logger.info(f"✅ Device {device_id} successfully verified and enrolled with quantum keys")
+        
+        return templates.TemplateResponse(
+            "secure_verify.html",
+            {
+                "request": request,
+                "device_id": device_id,
+                "success": "✅ Verification successful! Your quantum keys have been delivered and your device is now enrolled in the QFLARE network.",
+                "quantum_keys_active": True,
+                "timestamp": int(time.time())
+            }
+        )
+        
+    except ValueError as e:
+        return templates.TemplateResponse(
+            "secure_verify.html",
+            {
+                "request": request,
+                "device_id": device_id,
+                "error": str(e),
+                "timestamp": int(time.time())
+            }
+        )
+    except Exception as e:
+        logger.error(f"Error in secure verification: {e}")
+        return templates.TemplateResponse(
+            "secure_verify.html",
+            {
+                "request": request,
+                "device_id": device_id,
+                "error": f"Verification failed: {str(e)}",
+                "timestamp": int(time.time())
             }
         )
 

@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>QFLARE API Test</title>
+</head>
+<body>
+    <h1>🔐 QFLARE API Connection Test</h1>
+    <button onclick="testAPI()">Test Backend Connection</button>
+    <div id="result"></div>
+
+    <script>
+        async function testAPI() {
+            const resultDiv = document.getElementById('result');
+            resultDiv.innerHTML = '<p>Testing connection...</p>';
+            
+            try {
+                console.log('Testing API connection to http://localhost:8080');
+                
+                // Test 1: Check if backend is responding
+                const deviceResponse = await fetch('http://localhost:8080/api/devices');
+                console.log('Devices API Response:', deviceResponse);
+                
+                if (deviceResponse.ok) {
+                    const deviceData = await deviceResponse.json();
+                    console.log('Devices Data:', deviceData);
+                    
+                    // Test 2: Try registration API
+                    const formData = new URLSearchParams();
+                    formData.append('device_id', 'test123');
+                    formData.append('device_type', 'Mobile Device');
+                    formData.append('organization', 'Test Org');
+                    formData.append('contact_email', 'test@example.com');
+                    formData.append('phone_number', '7019582106');
+                    formData.append('use_case', 'Testing');
+                    formData.append('key_exchange_method', 'qr_otp');
+                    
+                    const registerResponse = await fetch('http://localhost:8080/api/secure_register', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/x-www-form-urlencoded',
+                        },
+                        body: formData,
+                    });
+                    
+                    console.log('Register API Response:', registerResponse);
+                    
+                    if (registerResponse.ok) {
+                        const registerData = await registerResponse.json();
+                        console.log('Register Data:', registerData);
+                        
+                        resultDiv.innerHTML = `
+                            <h3>✅ Connection Success!</h3>
+                            <p><strong>Devices API:</strong> ${deviceResponse.status} ${deviceResponse.statusText}</p>
+                            <p><strong>Register API:</strong> ${registerResponse.status} ${registerResponse.statusText}</p>
+                            <p><strong>Response:</strong> ${JSON.stringify(registerData, null, 2)}</p>
+                        `;
+                    } else {
+                        throw new Error(`Register API failed: ${registerResponse.status} ${registerResponse.statusText}`);
+                    }
+                } else {
+                    throw new Error(`Devices API failed: ${deviceResponse.status} ${deviceResponse.statusText}`);
+                }
+                
+            } catch (error) {
+                console.error('Connection test failed:', error);
+                resultDiv.innerHTML = `
+                    <h3>❌ Connection Failed</h3>
+                    <p><strong>Error:</strong> ${error.message}</p>
+                    <p><strong>Details:</strong> Check browser console for more info</p>
+                    <p><strong>Backend Status:</strong> Make sure backend is running on port 8080</p>
+                `;
+            }
+        }
+    </script>
+</body>
+</html>

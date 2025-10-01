@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QFLARE - Secure Key Verification</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --qflare-primary: #1e40af;
+            --qflare-secondary: #3b82f6;
+            --qflare-accent: #06b6d4;
+            --qflare-success: #10b981;
+            --qflare-warning: #f59e0b;
+            --qflare-danger: #ef4444;
+            --qflare-dark: #1f2937;
+            --qflare-light: #f8fafc;
+        }
+
+        body {
+            background: linear-gradient(135deg, var(--qflare-primary) 0%, var(--qflare-secondary) 100%);
+            min-height: 100vh;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        .verify-container {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .quantum-header {
+            background: linear-gradient(135deg, var(--qflare-dark) 0%, var(--qflare-primary) 100%);
+            color: white;
+            padding: 2rem;
+            border-radius: 20px 20px 0 0;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .quantum-header::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: repeating-linear-gradient(
+                45deg,
+                transparent,
+                transparent 10px,
+                rgba(255,255,255,0.05) 10px,
+                rgba(255,255,255,0.05) 20px
+            );
+            animation: quantumFlow 20s linear infinite;
+        }
+
+        @keyframes quantumFlow {
+            0% { transform: translate(-50%, -50%) rotate(0deg); }
+            100% { transform: translate(-50%, -50%) rotate(360deg); }
+        }
+
+        .quantum-icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            text-shadow: 0 0 20px rgba(255, 255, 255, 0.5);
+            position: relative;
+            z-index: 2;
+        }
+
+        .form-control {
+            border: 2px solid #e2e8f0;
+            border-radius: 10px;
+            padding: 12px 16px;
+            transition: all 0.3s ease;
+            font-size: 1.1rem;
+        }
+
+        .form-control:focus {
+            border-color: var(--qflare-accent);
+            box-shadow: 0 0 0 0.2rem rgba(6, 182, 212, 0.25);
+            transform: translateY(-2px);
+        }
+
+        .btn-quantum {
+            background: linear-gradient(135deg, var(--qflare-accent) 0%, var(--qflare-secondary) 100%);
+            border: none;
+            color: white;
+            padding: 12px 30px;
+            border-radius: 10px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .btn-quantum:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 25px rgba(6, 182, 212, 0.3);
+            color: white;
+        }
+
+        .alert {
+            border-radius: 10px;
+            border: none;
+            padding: 15px 20px;
+            margin: 20px 0;
+        }
+
+        .alert-success {
+            background: linear-gradient(135deg, var(--qflare-success) 0%, #34d399 100%);
+            color: white;
+        }
+
+        .alert-danger {
+            background: linear-gradient(135deg, var(--qflare-danger) 0%, #f87171 100%);
+            color: white;
+        }
+
+        .verification-method {
+            background: var(--qflare-light);
+            border-radius: 15px;
+            padding: 20px;
+            margin: 20px 0;
+            border-left: 5px solid var(--qflare-accent);
+        }
+
+        .method-icon {
+            font-size: 2rem;
+            color: var(--qflare-accent);
+            margin-bottom: 10px;
+        }
+
+        .back-link {
+            color: var(--qflare-secondary);
+            text-decoration: none;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+
+        .back-link:hover {
+            color: var(--qflare-accent);
+            text-decoration: none;
+        }
+
+        .quantum-keys-display {
+            background: linear-gradient(135deg, var(--qflare-dark) 0%, var(--qflare-primary) 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 15px;
+            margin: 20px 0;
+            font-family: 'Courier New', monospace;
+        }
+
+        .status-indicator {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            margin-right: 8px;
+            animation: pulse 2s infinite;
+        }
+
+        .status-success { background-color: var(--qflare-success); }
+        .status-warning { background-color: var(--qflare-warning); }
+        .status-danger { background-color: var(--qflare-danger); }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container-fluid min-vh-100 d-flex align-items-center justify-content-center p-4">
+        <div class="verify-container col-12 col-md-8 col-lg-6 col-xl-5">
+            <div class="quantum-header">
+                <div class="quantum-icon">
+                    <i class="fas fa-shield-alt"></i>
+                </div>
+                <h1 class="h3 mb-0">Quantum Key Verification</h1>
+                <p class="mb-0 opacity-75">Complete your secure enrollment</p>
+            </div>
+
+            <div class="p-4 p-md-5">
+                {% if success %}
+                    <div class="alert alert-success">
+                        <i class="fas fa-check-circle me-2"></i>
+                        {{ success | safe }}
+                    </div>
+
+                    {% if quantum_keys_active %}
+                        <div class="quantum-keys-display">
+                            <h5><i class="fas fa-key me-2"></i>Quantum Keys Active</h5>
+                            <p class="mb-2">
+                                <span class="status-indicator status-success"></span>
+                                Post-Quantum Cryptography: <strong>ENABLED</strong>
+                            </p>
+                            <p class="mb-2">
+                                <span class="status-indicator status-success"></span>
+                                CRYSTALS-Kyber-1024: <strong>ACTIVE</strong>
+                            </p>
+                            <p class="mb-0">
+                                <span class="status-indicator status-success"></span>
+                                CRYSTALS-Dilithium-2: <strong>ACTIVE</strong>
+                            </p>
+                        </div>
+
+                        <div class="text-center mt-4">
+                            <a href="/dashboard" class="btn btn-quantum me-3">
+                                <i class="fas fa-tachometer-alt me-2"></i>Go to Dashboard
+                            </a>
+                            <a href="/devices" class="btn btn-outline-secondary">
+                                <i class="fas fa-list me-2"></i>View Devices
+                            </a>
+                        </div>
+                    {% endif %}
+
+                {% elif error %}
+                    <div class="alert alert-danger">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        {{ error }}
+                    </div>
+
+                {% else %}
+                    <div class="verification-method">
+                        {% if method == "qr_otp" %}
+                            <div class="method-icon text-center">
+                                <i class="fas fa-qrcode"></i>
+                            </div>
+                            <h5 class="text-center mb-3">QR Code + OTP Verification</h5>
+                            <p class="text-muted text-center mb-4">
+                                Enter the One-Time Password (OTP) received from the administrator
+                            </p>
+                        {% elif method == "totp" %}
+                            <div class="method-icon text-center">
+                                <i class="fas fa-mobile-alt"></i>
+                            </div>
+                            <h5 class="text-center mb-3">TOTP Verification</h5>
+                            <p class="text-muted text-center mb-4">
+                                Enter the current TOTP code from your authenticator app
+                            </p>
+                        {% elif method == "physical_token" %}
+                            <div class="method-icon text-center">
+                                <i class="fas fa-key"></i>
+                            </div>
+                            <h5 class="text-center mb-3">Physical Token Verification</h5>
+                            <p class="text-muted text-center mb-4">
+                                Enter the PIN provided with your physical token
+                            </p>
+                        {% endif %}
+                    </div>
+
+                    <form method="POST" action="/api/secure_verify/{{ device_id }}">
+                        <div class="mb-4">
+                            <label class="form-label fw-bold">Device ID</label>
+                            <input type="text" class="form-control" value="{{ device_id }}" readonly>
+                        </div>
+
+                        {% if method == "qr_otp" %}
+                            <div class="mb-4">
+                                <label for="otp" class="form-label fw-bold">
+                                    <i class="fas fa-lock me-2"></i>One-Time Password (OTP)
+                                </label>
+                                <input type="text" class="form-control" id="otp" name="otp" 
+                                       placeholder="Enter 6-digit OTP" maxlength="6" required>
+                                <div class="form-text">
+                                    Enter the 6-digit OTP sent via secure channel
+                                </div>
+                            </div>
+
+                        {% elif method == "totp" %}
+                            <div class="mb-4">
+                                <label for="totp_code" class="form-label fw-bold">
+                                    <i class="fas fa-mobile-alt me-2"></i>TOTP Code
+                                </label>
+                                <input type="text" class="form-control" id="totp_code" name="totp_code" 
+                                       placeholder="Enter 6-digit TOTP" maxlength="6" required>
+                                <div class="form-text">
+                                    Enter current TOTP code from your authenticator app
+                                </div>
+                            </div>
+
+                        {% elif method == "physical_token" %}
+                            <div class="mb-4">
+                                <label for="token_pin" class="form-label fw-bold">
+                                    <i class="fas fa-key me-2"></i>Token PIN
+                                </label>
+                                <input type="password" class="form-control" id="token_pin" name="token_pin" 
+                                       placeholder="Enter token PIN" required>
+                                <div class="form-text">
+                                    Enter the PIN provided with your physical token
+                                </div>
+                            </div>
+                        {% endif %}
+
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-quantum">
+                                <i class="fas fa-shield-alt me-2"></i>Verify & Activate Quantum Keys
+                            </button>
+                        </div>
+                    </form>
+                {% endif %}
+
+                <div class="text-center mt-4">
+                    <a href="/secure-register" class="back-link">
+                        <i class="fas fa-arrow-left me-2"></i>Back to Registration
+                    </a>
+                </div>
+
+                <div class="mt-5 pt-4 border-top text-center text-muted">
+                    <small>
+                        <i class="fas fa-atom me-1"></i>
+                        Powered by QFLARE Post-Quantum Cryptography
+                        <br>
+                        Timestamp: {{ timestamp }}
+                    </small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Auto-focus on verification input
+        document.addEventListener('DOMContentLoaded', function() {
+            const inputs = ['#otp', '#totp_code', '#token_pin'];
+            for (let input of inputs) {
+                const element = document.querySelector(input);
+                if (element) {
+                    element.focus();
+                    break;
+                }
+            }
+        });
+
+        // Auto-format numeric inputs
+        document.querySelectorAll('input[type="text"][maxlength="6"]').forEach(input => {
+            input.addEventListener('input', function(e) {
+                this.value = this.value.replace(/\D/g, '');
+            });
+        });
+    </script>
+</body>
+</html>

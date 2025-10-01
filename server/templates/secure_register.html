@@ -1,0 +1,610 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Secure Registration - QFLARE Quantum-Safe Network</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+        
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        .header {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 30px;
+            margin-bottom: 30px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            text-align: center;
+        }
+        
+        .header h1 {
+            color: #2c3e50;
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            font-weight: 700;
+        }
+        
+        .header p {
+            color: #7f8c8d;
+            font-size: 1.1em;
+            margin-bottom: 20px;
+        }
+        
+        .security-badge {
+            display: inline-block;
+            background: linear-gradient(135deg, #2ecc71, #27ae60);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 25px;
+            font-weight: 600;
+            margin: 10px;
+        }
+        
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+        }
+        
+        .registration-form {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        }
+        
+        .security-info {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        }
+        
+        .form-section {
+            margin-bottom: 30px;
+        }
+        
+        .form-section h3 {
+            color: #2c3e50;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #ecf0f1;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #34495e;
+        }
+        
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #ecf0f1;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: all 0.3s ease;
+        }
+        
+        .form-group input:focus,
+        .form-group select:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+        
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+        
+        .key-exchange-methods {
+            margin: 20px 0;
+        }
+        
+        .method-option {
+            background: #f8f9fa;
+            border: 2px solid #e9ecef;
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .method-option:hover {
+            border-color: #667eea;
+            background: #f0f3ff;
+        }
+        
+        .method-option.selected {
+            border-color: #667eea;
+            background: #e8edff;
+        }
+        
+        .method-option input[type="radio"] {
+            margin-right: 10px;
+        }
+        
+        .method-title {
+            font-weight: 600;
+            color: #2c3e50;
+            margin-bottom: 5px;
+        }
+        
+        .method-description {
+            font-size: 13px;
+            color: #7f8c8d;
+        }
+        
+        .security-level {
+            display: inline-block;
+            padding: 3px 8px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 600;
+            margin-left: 10px;
+        }
+        
+        .security-high {
+            background: #d4edda;
+            color: #155724;
+        }
+        
+        .security-medium {
+            background: #fff3cd;
+            color: #856404;
+        }
+        
+        .security-max {
+            background: #d1ecf1;
+            color: #0c5460;
+        }
+        
+        .submit-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            width: 100%;
+            margin-top: 20px;
+        }
+        
+        .submit-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+        }
+        
+        .security-feature {
+            display: flex;
+            align-items: center;
+            margin-bottom: 15px;
+            padding: 10px;
+            background: #f8f9fa;
+            border-radius: 8px;
+        }
+        
+        .security-feature .icon {
+            font-size: 24px;
+            margin-right: 15px;
+            min-width: 30px;
+        }
+        
+        .security-feature .text {
+            flex: 1;
+        }
+        
+        .security-feature .title {
+            font-weight: 600;
+            color: #2c3e50;
+        }
+        
+        .security-feature .desc {
+            font-size: 13px;
+            color: #7f8c8d;
+        }
+        
+        .alert {
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-weight: 500;
+        }
+        
+        .alert-info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+        
+        .alert-warning {
+            background: #fff3cd;
+            color: #856404;
+            border: 1px solid #ffeaa7;
+        }
+        
+        .process-flow {
+            margin: 20px 0;
+        }
+        
+        .flow-step {
+            display: flex;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        
+        .flow-number {
+            background: #667eea;
+            color: white;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            margin-right: 15px;
+            min-width: 30px;
+        }
+        
+        .flow-text {
+            flex: 1;
+            font-size: 14px;
+            color: #2c3e50;
+        }
+        
+        @media (max-width: 768px) {
+            .main-content {
+                grid-template-columns: 1fr;
+            }
+            
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <h1>🔐 QFLARE Secure Registration</h1>
+            <p>Quantum-Safe Key Exchange Protocol</p>
+            <div class="security-badge">⚛️ Post-Quantum Cryptography</div>
+            <div class="security-badge">🛡️ MITM Attack Prevention</div>
+            <div class="security-badge">🔒 Multi-Factor Authentication</div>
+        </div>
+        
+        <!-- Main Content -->
+        <div class="main-content">
+            <!-- Registration Form -->
+            <div class="registration-form">
+                <div class="alert alert-info">
+                    🔐 <strong>Secure Bootstrap Process:</strong> Your request will be processed using quantum-safe 
+                    cryptography with multiple verification methods to prevent man-in-the-middle attacks.
+                </div>
+                
+                <!-- Device Information -->
+                <div class="form-section">
+                    <h3>📱 Device Information</h3>
+                    <form id="registrationForm" method="post" action="/api/secure_register">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="device_id">Device ID *</label>
+                                <input type="text" id="device_id" name="device_id" required 
+                                       placeholder="unique_device_identifier">
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="device_type">Device Type *</label>
+                                <select id="device_type" name="device_type" required>
+                                    <option value="">Select device type</option>
+                                    <option value="edge_node">Edge Computing Node</option>
+                                    <option value="iot_sensor">IoT Sensor</option>
+                                    <option value="mobile_device">Mobile Device</option>
+                                    <option value="workstation">Research Workstation</option>
+                                    <option value="server">Server Node</option>
+                                    <option value="gateway">Network Gateway</option>
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="organization">Organization *</label>
+                                <input type="text" id="organization" name="organization" required 
+                                       placeholder="Your organization name">
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="contact_email">Contact Email *</label>
+                                <input type="email" id="contact_email" name="contact_email" required 
+                                       placeholder="admin@organization.com">
+                            </div>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="use_case">Use Case Description *</label>
+                            <textarea id="use_case" name="use_case" rows="3" required 
+                                      placeholder="Describe how you plan to use QFLARE..."></textarea>
+                        </div>
+                </div>
+                
+                <!-- Key Exchange Method Selection -->
+                <div class="form-section">
+                    <h3>🔑 Key Exchange Method</h3>
+                    <div class="alert alert-warning">
+                        ⚠️ <strong>Critical Security Choice:</strong> Select how you want to securely receive your quantum keys.
+                        This prevents man-in-the-middle attacks during initial setup.
+                    </div>
+                    
+                    <div class="key-exchange-methods">
+                        <div class="method-option" onclick="selectMethod('qr_otp')">
+                            <input type="radio" id="method_qr_otp" name="key_exchange_method" value="qr_otp">
+                            <div class="method-title">
+                                📱 QR Code + One-Time Password
+                                <span class="security-level security-high">HIGH SECURITY</span>
+                            </div>
+                            <div class="method-description">
+                                Admin generates QR code with encrypted keys. You receive OTP via secure channel 
+                                (SMS, phone call, in-person) to decrypt keys locally.
+                            </div>
+                        </div>
+                        
+                        <div class="method-option" onclick="selectMethod('pgp_email')">
+                            <input type="radio" id="method_pgp_email" name="key_exchange_method" value="pgp_email">
+                            <div class="method-title">
+                                📧 PGP Encrypted Email
+                                <span class="security-level security-max">MAXIMUM SECURITY</span>
+                            </div>
+                            <div class="method-description">
+                                Keys encrypted with your PGP public key and sent via email. 
+                                Requires existing PGP setup for ultimate security.
+                            </div>
+                        </div>
+                        
+                        <div class="method-option" onclick="selectMethod('totp')">
+                            <input type="radio" id="method_totp" name="key_exchange_method" value="totp">
+                            <div class="method-title">
+                                🔐 TOTP Authentication
+                                <span class="security-level security-high">HIGH SECURITY</span>
+                            </div>
+                            <div class="method-description">
+                                Time-based one-time passwords using authenticator app. 
+                                TOTP secret provided via secure out-of-band channel.
+                            </div>
+                        </div>
+                        
+                        <div class="method-option" onclick="selectMethod('physical_token')">
+                            <input type="radio" id="method_physical_token" name="key_exchange_method" value="physical_token">
+                            <div class="method-title">
+                                🔑 Physical Security Token
+                                <span class="security-level security-max">MAXIMUM SECURITY</span>
+                            </div>
+                            <div class="method-description">
+                                Encrypted keys delivered via physical token (USB, mail, courier). 
+                                Best for high-security environments with physical access control.
+                            </div>
+                        </div>
+                        
+                        <div class="method-option" onclick="selectMethod('blockchain')">
+                            <input type="radio" id="method_blockchain" name="key_exchange_method" value="blockchain">
+                            <div class="method-title">
+                                ⛓️ Blockchain Verification
+                                <span class="security-level security-medium">MEDIUM SECURITY</span>
+                            </div>
+                            <div class="method-description">
+                                Key fingerprint published to blockchain for verification. 
+                                Keys delivered via HTTPS with immutable verification record.
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Method-specific fields -->
+                    <div id="pgp_fields" style="display: none;">
+                        <div class="form-group">
+                            <label for="pgp_public_key">Your PGP Public Key *</label>
+                            <textarea id="pgp_public_key" name="pgp_public_key" rows="8" 
+                                      placeholder="-----BEGIN PGP PUBLIC KEY BLOCK-----&#10;...&#10;-----END PGP PUBLIC KEY BLOCK-----"></textarea>
+                        </div>
+                    </div>
+                    
+                    <div id="contact_fields" style="display: none;">
+                        <div class="form-group">
+                            <label for="secure_contact">Secure Contact Method *</label>
+                            <select id="secure_contact" name="secure_contact">
+                                <option value="">Select contact method</option>
+                                <option value="sms">SMS to verified phone</option>
+                                <option value="phone">Voice call</option>
+                                <option value="in_person">In-person delivery</option>
+                                <option value="signal">Signal messenger</option>
+                                <option value="telegram">Telegram</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="contact_info">Contact Information *</label>
+                            <input type="text" id="contact_info" name="contact_info" 
+                                   placeholder="Phone number, Signal ID, etc.">
+                        </div>
+                    </div>
+                    
+                    <div id="physical_fields" style="display: none;">
+                        <div class="form-group">
+                            <label for="delivery_address">Secure Delivery Address *</label>
+                            <textarea id="delivery_address" name="delivery_address" rows="3" 
+                                      placeholder="Physical address for secure token delivery"></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label for="delivery_method">Delivery Method *</label>
+                            <select id="delivery_method" name="delivery_method">
+                                <option value="">Select delivery method</option>
+                                <option value="registered_mail">Registered Mail</option>
+                                <option value="courier">Secure Courier</option>
+                                <option value="in_person">In-Person Pickup</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                
+                <button type="submit" class="submit-btn">
+                    🚀 Submit Secure Registration Request
+                </button>
+                </form>
+            </div>
+            
+            <!-- Security Information -->
+            <div class="security-info">
+                <h3>🛡️ Security Features</h3>
+                
+                <div class="security-feature">
+                    <div class="icon">⚛️</div>
+                    <div class="text">
+                        <div class="title">Post-Quantum Cryptography</div>
+                        <div class="desc">CRYSTALS-Kyber-1024 & Dilithium-2 (NIST standardized)</div>
+                    </div>
+                </div>
+                
+                <div class="security-feature">
+                    <div class="icon">🔐</div>
+                    <div class="text">
+                        <div class="title">MITM Attack Prevention</div>
+                        <div class="desc">Multiple out-of-band verification channels</div>
+                    </div>
+                </div>
+                
+                <div class="security-feature">
+                    <div class="icon">🎯</div>
+                    <div class="text">
+                        <div class="title">Multi-Factor Authentication</div>
+                        <div class="desc">Combines possession, knowledge, and verification factors</div>
+                    </div>
+                </div>
+                
+                <div class="security-feature">
+                    <div class="icon">⏰</div>
+                    <div class="text">
+                        <div class="title">Time-Limited Keys</div>
+                        <div class="desc">Automatic expiration prevents replay attacks</div>
+                    </div>
+                </div>
+                
+                <h3 style="margin-top: 30px;">📋 Registration Process</h3>
+                
+                <div class="process-flow">
+                    <div class="flow-step">
+                        <div class="flow-number">1</div>
+                        <div class="flow-text">Submit registration request with selected key exchange method</div>
+                    </div>
+                    
+                    <div class="flow-step">
+                        <div class="flow-number">2</div>
+                        <div class="flow-text">Admin reviews request and generates quantum-safe keys</div>
+                    </div>
+                    
+                    <div class="flow-step">
+                        <div class="flow-number">3</div>
+                        <div class="flow-text">Keys delivered via your chosen secure method</div>
+                    </div>
+                    
+                    <div class="flow-step">
+                        <div class="flow-number">4</div>
+                        <div class="flow-text">You verify and install keys on your device</div>
+                    </div>
+                    
+                    <div class="flow-step">
+                        <div class="flow-number">5</div>
+                        <div class="flow-text">Begin secure quantum-safe federated learning</div>
+                    </div>
+                </div>
+                
+                <div class="alert alert-info" style="margin-top: 20px;">
+                    💡 <strong>Why This Matters:</strong> Traditional key exchange over the internet is vulnerable 
+                    to man-in-the-middle attacks. Our multi-channel approach ensures your keys are delivered 
+                    securely even if network communications are compromised.
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        function selectMethod(method) {
+            // Clear all selections
+            document.querySelectorAll('.method-option').forEach(el => el.classList.remove('selected'));
+            document.querySelectorAll('input[name="key_exchange_method"]').forEach(el => el.checked = false);
+            
+            // Select the clicked method
+            document.getElementById('method_' + method).checked = true;
+            document.getElementById('method_' + method).closest('.method-option').classList.add('selected');
+            
+            // Hide all method-specific fields
+            document.getElementById('pgp_fields').style.display = 'none';
+            document.getElementById('contact_fields').style.display = 'none';
+            document.getElementById('physical_fields').style.display = 'none';
+            
+            // Show relevant fields
+            if (method === 'pgp_email') {
+                document.getElementById('pgp_fields').style.display = 'block';
+            } else if (method === 'qr_otp' || method === 'totp') {
+                document.getElementById('contact_fields').style.display = 'block';
+            } else if (method === 'physical_token') {
+                document.getElementById('physical_fields').style.display = 'block';
+            }
+        }
+        
+        // Form validation
+        document.getElementById('registrationForm').addEventListener('submit', function(e) {
+            const method = document.querySelector('input[name="key_exchange_method"]:checked');
+            if (!method) {
+                e.preventDefault();
+                alert('Please select a key exchange method.');
+                return false;
+            }
+            
+            // Method-specific validation
+            if (method.value === 'pgp_email') {
+                const pgpKey = document.getElementById('pgp_public_key').value;
+                if (!pgpKey.includes('BEGIN PGP PUBLIC KEY')) {
+                    e.preventDefault();
+                    alert('Please provide a valid PGP public key.');
+                    return false;
+                }
+            }
+            
+            return true;
+        });
+    </script>
+</body>
+</html>
