@@ -1248,6 +1248,167 @@ async def trigger_model_aggregation():
         fl_state["status"] = "error"
 
 
+# =======================
+# FEDERATED LEARNING ENDPOINTS
+# =======================
+
+@app.get("/api/fl/status")
+@limiter.limit("60/minute")
+async def fl_status(request: Request):
+    """Get FL system status."""
+    try:
+        if fl_controller:
+            status = fl_controller.get_status()
+            return {"success": True, "fl_status": status}
+        else:
+            return {"success": False, "message": "FL system not available"}
+    except Exception as e:
+        logger.error(f"Error getting FL status: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/api/fl/register")
+@limiter.limit("10/minute")
+async def fl_register_device(request: Request):
+    """Register a device for federated learning."""
+    try:
+        data = await request.json()
+        device_id = data.get("device_id")
+        capabilities = data.get("capabilities", {})
+        
+        if not device_id:
+            raise HTTPException(status_code=400, detail="device_id is required")
+        
+        if fl_controller:
+            success = fl_controller.register_device(device_id, capabilities)
+            if success:
+                return {"success": True, "message": f"Device {device_id} registered for FL"}
+            else:
+                raise HTTPException(status_code=400, detail="Failed to register device")
+        else:
+            raise HTTPException(status_code=503, detail="FL system not available")
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error registering device for FL: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/api/fl/submit_model")
+@limiter.limit("30/minute")
+async def fl_submit_model(request: Request):
+    """Submit a trained model update."""
+    try:
+        data = await request.json()
+        device_id = data.get("device_id")
+        
+        if not device_id:
+            raise HTTPException(status_code=400, detail="device_id is required")
+        
+        if fl_controller:
+            success = fl_controller.submit_model(data)
+            if success:
+                return {"success": True, "message": "Model submitted successfully"}
+            else:
+                raise HTTPException(status_code=400, detail="Failed to submit model")
+        else:
+            raise HTTPException(status_code=503, detail="FL system not available")
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error submitting model: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/fl/global_model")
+@limiter.limit("60/minute")
+async def fl_get_global_model(request: Request):
+    """Get the current global model."""
+    try:
+        if fl_controller:
+            model = fl_controller.get_global_model()
+            if model:
+                return {"success": True, "global_model": model}
+            else:
+                return {"success": False, "message": "No global model available yet"}
+        else:
+            raise HTTPException(status_code=503, detail="FL system not available")
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error getting global model: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/api/fl/start_training")
+@limiter.limit("5/minute")
+async def fl_start_training(request: Request):
+    """Start a new FL training round."""
+    try:
+        data = await request.json()
+        rounds = data.get("rounds", 10)
+        min_participants = data.get("min_participants", 2)
+        
+        if fl_controller:
+            success = fl_controller.start_training(rounds, min_participants)
+            if success:
+                return {"success": True, "message": f"Training started for {rounds} rounds"}
+            else:
+                raise HTTPException(status_code=400, detail="Failed to start training")
+        else:
+            raise HTTPException(status_code=503, detail="FL system not available")
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error starting training: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/api/fl/stop_training")
+@limiter.limit("5/minute")
+async def fl_stop_training(request: Request):
+    """Stop the current FL training."""
+    try:
+        if fl_controller:
+            fl_controller.stop_training()
+            return {"success": True, "message": "Training stopped"}
+        else:
+            raise HTTPException(status_code=503, detail="FL system not available")
+    except Exception as e:
+        logger.error(f"Error stopping training: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/fl/devices")
+@limiter.limit("60/minute")
+async def fl_list_devices(request: Request):
+    """List all registered FL devices."""
+    try:
+        if fl_controller:
+            devices = fl_controller.list_devices()
+            return {"success": True, "devices": devices}
+        else:
+            raise HTTPException(status_code=503, detail="FL system not available")
+    except Exception as e:
+        logger.error(f"Error listing devices: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/fl/metrics")
+@limiter.limit("60/minute")
+async def fl_get_metrics(request: Request):
+    """Get FL training metrics."""
+    try:
+        if fl_controller:
+            metrics = fl_controller.get_metrics()
+            return {"success": True, "metrics": metrics}
+        else:
+            raise HTTPException(status_code=503, detail="FL system not available")
+    except Exception as e:
+        logger.error(f"Error getting metrics: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 if __name__ == "__main__":
     print("🚀 Starting QFLARE Secure Registration Demo Server...")
     print("📍 Navigate to: http://localhost:8080")

@@ -254,3 +254,131 @@ class FLController:
             "time_remaining": time_remaining,
             "deadline": (self.round_start_time + timedelta(seconds=self.round_timeout)).isoformat()
         } 
+    def get_status(self) -> Dict[str, Any]:
+        """Get comprehensive FL system status."""
+        return {
+            "available": True,
+            "current_round": self.current_round,
+            "total_rounds": getattr(self, 'total_rounds', 10),
+            "status": "training" if self.is_training else "idle",
+            "registered_devices": len(getattr(self, 'registered_devices', {})),
+            "active_devices": len([d for d in getattr(self, 'registered_devices', {}).values() if d.get('status') == 'active']),
+            "participants_this_round": len(self.selected_participants) if self.is_training else 0,
+            "round_start_time": self.round_start_time.isoformat() if self.round_start_time else None,
+            "training_history": getattr(self, 'training_history', [])
+        }
+    
+    def register_device(self, device_id: str, capabilities: Dict[str, Any]) -> bool:
+        """Register a device for federated learning."""
+        if not hasattr(self, 'registered_devices'):
+            self.registered_devices = {}
+        
+        self.registered_devices[device_id] = {
+            "device_id": device_id,
+            "capabilities": capabilities,
+            "status": "active",
+            "registered_at": datetime.now().isoformat(),
+            "submissions": 0
+        }
+        logger.info(f"Registered device {device_id} for FL")
+        return True
+    
+    def submit_model(self, data: Dict[str, Any]) -> bool:
+        """Submit a model update from a device."""
+        device_id = data.get("device_id")
+        round_number = data.get("round_number")
+        model_weights = data.get("model_weights")
+        metrics = data.get("metrics", {})
+        samples = data.get("samples", 0)
+        
+        if not self.is_training:
+            logger.warning(f"Model submission from {device_id} rejected - no active training")
+            return False
+        
+        if device_id not in self.selected_participants:
+            logger.warning(f"Model submission from {device_id} rejected - not a participant")
+            return False
+        
+        # Record submission
+        self.selected_participants[device_id].update({
+            "model_submitted": True,
+            "submission_time": datetime.now().isoformat(),
+            "model_weights": model_weights,
+            "metrics": metrics,
+            "samples": samples
+        })
+        
+        # Update device stats
+        if hasattr(self, 'registered_devices') and device_id in self.registered_devices:
+            self.registered_devices[device_id]["submissions"] += 1
+        
+        logger.info(f"Model submitted from {device_id} for round {round_number}")
+        return True
+    
+    def get_global_model(self) -> Optional[Dict[str, Any]]:
+        """Get the current global model."""
+        if not hasattr(self, 'global_model') or not self.global_model:
+            return None
+        
+        return self.global_model
+    
+    def start_training(self, rounds: int = 10, min_participants: int = 2) -> bool:
+        """Start FL training."""
+        if self.is_training:
+            logger.warning("Training already in progress")
+            return False
+        
+        if not hasattr(self, 'registered_devices'):
+            self.registered_devices = {}
+        
+        active_devices = [d for d in self.registered_devices.values() if d.get('status') == 'active']
+        
+        if len(active_devices) < min_participants:
+            logger.warning(f"Not enough devices to start training: {len(active_devices)} < {min_participants}")
+            return False
+        
+        # Start training
+        self.is_training = True
+        self.current_round = 1
+        self.round_start_time = datetime.now()
+        self.total_rounds = rounds
+        
+        # Select participants (all active devices for now)
+        self.selected_participants = {
+            d['device_id']: {
+                "device_info": d,
+                "status": "selected",
+                "model_submitted": False
+            }
+            for d in active_devices
+        }
+        
+        logger.info(f"Started FL training for {rounds} rounds with {len(active_devices)} devices")
+        return True
+    
+    def stop_training(self):
+        """Stop FL training."""
+        if self.is_training:
+            logger.info(f"Stopping FL training at round {self.current_round}")
+            self.is_training = False
+            self.round_start_time = None
+            self.selected_participants = {}
+    
+    def list_devices(self) -> List[Dict[str, Any]]:
+        """List all registered devices."""
+        if not hasattr(self, 'registered_devices'):
+            return []
+        
+        return list(self.registered_devices.values())
+    
+    def get_metrics(self) -> Dict[str, Any]:
+        """Get training metrics."""
+        if not hasattr(self, 'training_history'):
+            self.training_history = []
+        
+        return {
+            "total_rounds": self.current_round,
+            "active_training": self.is_training,
+            "history": self.training_history,
+            "current_participants": len(self.selected_participants) if self.is_training else 0
+        }

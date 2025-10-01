@@ -34,6 +34,9 @@ import {
   Security,
 } from '@mui/icons-material';
 
+// API Configuration
+const API_BASE_URL = 'http://localhost:8080';
+
 interface FLStatus {
   available: boolean;
   current_round: number;
@@ -63,12 +66,13 @@ const FederatedLearningPage: React.FC = () => {
     target_participants: 3,
     local_epochs: 5,
     learning_rate: 0.01,
+    total_rounds: 10,
   });
 
   // Fetch FL status
   const fetchFLStatus = async () => {
     try {
-      const response = await fetch('/api/fl/status');
+      const response = await fetch(`${API_BASE_URL}/api/fl/status`);
       const data = await response.json();
       
       if (data.success) {
@@ -92,9 +96,15 @@ const FederatedLearningPage: React.FC = () => {
       formData.append('local_epochs', roundConfig.local_epochs.toString());
       formData.append('learning_rate', roundConfig.learning_rate.toString());
 
-      const response = await fetch('/api/fl/start_round', {
+      const response = await fetch(`${API_BASE_URL}/api/fl/start_training`, {
         method: 'POST',
-        body: formData,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          rounds: roundConfig.total_rounds,
+          min_participants: roundConfig.target_participants
+        }),
       });
       
       const data = await response.json();
@@ -117,7 +127,7 @@ const FederatedLearningPage: React.FC = () => {
     }
 
     try {
-      const response = await fetch('/api/fl/reset', { method: 'POST' });
+      const response = await fetch(`${API_BASE_URL}/api/fl/stop_training`, { method: 'POST' });
       const data = await response.json();
       
       if (data.success) {
@@ -205,7 +215,7 @@ const FederatedLearningPage: React.FC = () => {
                   <Chip 
                     label={flStatus.status.toUpperCase()} 
                     color={getStatusColor(flStatus.status) as any}
-                    size="large"
+                    sx={{ fontSize: '1rem', padding: '18px 8px', fontWeight: 'bold' }}
                   />
                 </CardContent>
               </Card>
