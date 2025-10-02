@@ -6,6 +6,14 @@ This is the main FastAPI application for the QFLARE federated learning server.
 Now with persistent database storage.
 """
 
+import sys
+import os
+from pathlib import Path
+
+# Add server directory to Python path
+server_dir = Path(__file__).parent
+sys.path.insert(0, str(server_dir))
+
 from fastapi import FastAPI, Request, HTTPException, status
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
@@ -21,8 +29,11 @@ from pathlib import Path
 from datetime import datetime
 
 from api.routes import router as api_router
+from api.websocket_endpoints import router as websocket_router
+from api.privacy_endpoints import privacy_router, set_websocket_manager
+from api.byzantine_endpoints import byzantine_router, set_websocket_manager as set_byzantine_websocket_manager
 from fl_core.client_manager import register_client
-from registry import register_device, get_registered_devices
+from registry import register_device, get_registered_devices  
 from database import init_database, close_database
 
 # Import secure key exchange
@@ -101,6 +112,9 @@ app.mount("/static", StaticFiles(directory=str(BASE_DIR / "static")), name="stat
 
 # Include API routes
 app.include_router(api_router, prefix="/api", tags=["api"])
+app.include_router(websocket_router, prefix="/api", tags=["websocket"])
+app.include_router(privacy_router, tags=["privacy"])
+app.include_router(byzantine_router, tags=["byzantine"])
 
 
 @app.get("/", response_class=HTMLResponse)

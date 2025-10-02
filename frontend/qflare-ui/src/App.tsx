@@ -12,6 +12,8 @@ import VerificationPage from './pages/VerificationPage';
 import DevicesPage from './pages/DevicesPage';
 import AdminDashboard from './pages/AdminDashboard';
 import FederatedLearningPage from './pages/FederatedLearningPage';
+import DeviceManagementPage from './pages/DeviceManagementPage';
+import TrainingControlPage from './pages/TrainingControlPage';
 
 function App() {
   return (
@@ -26,6 +28,8 @@ function App() {
             <Route path="/devices" element={<DevicesPage />} />
             <Route path="/admin" element={<AdminDashboard />} />
             <Route path="/fl" element={<FederatedLearningPage />} />
+            <Route path="/device-management" element={<DeviceManagementPage />} />
+            <Route path="/training-control" element={<TrainingControlPage />} />
           </Routes>
         </Layout>
       </Router>

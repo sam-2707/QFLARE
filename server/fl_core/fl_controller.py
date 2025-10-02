@@ -2,7 +2,7 @@
 QFLARE Federated Learning Controller
 
 This module orchestrates federated learning training rounds, manages client selection,
-and coordinates model aggregation.
+and coordinates model aggregation with real ML training.
 """
 
 import logging
@@ -11,6 +11,22 @@ import random
 from typing import Dict, List, Any, Optional
 from datetime import datetime, timedelta
 import asyncio
+import json
+
+from ..ml.training import FederatedTrainer, create_real_fl_trainer
+from ..security.mock_enclave import mock_secure_compute
+
+# Import WebSocket functions for real-time updates
+try:
+    from ..websocket.manager import (
+        broadcast_fl_status_update,
+        broadcast_training_progress,
+        broadcast_model_aggregation,
+        broadcast_device_status
+    )
+    WEBSOCKET_AVAILABLE = True
+except ImportError:
+    WEBSOCKET_AVAILABLE = False
 
 logger = logging.getLogger(__name__)
 
@@ -22,7 +38,8 @@ class FLController:
     def __init__(self, 
                  min_participants: int = 2,
                  max_participants: int = 10,
-                 round_timeout: int = 1800):  # 30 minutes
+                 round_timeout: int = 1800,  # 30 minutes
+                 training_config: Optional[Dict[str, Any]] = None):
         """
         Initialize FL Controller.
         
@@ -30,6 +47,7 @@ class FLController:
             min_participants: Minimum number of participants required
             max_participants: Maximum number of participants per round
             round_timeout: Timeout for training rounds in seconds
+            training_config: Configuration for ML training
         """
         self.min_participants = min_participants
         self.max_participants = max_participants
@@ -41,7 +59,18 @@ class FLController:
         self.round_start_time = None
         self.selected_participants = {}
         
+        # Initialize real ML trainer
+        default_config = {
+            "dataset": "mnist",
+            "model": "mnist", 
+            "data_dir": "../data",
+            "device": "auto"
+        }
+        config = {**default_config, **(training_config or {})}
+        self.ml_trainer = create_real_fl_trainer(config)
+        
         logger.info(f"FL Controller initialized with {min_participants}-{max_participants} participants")
+        logger.info(f"Using dataset: {config['dataset']}, model: {config['model']}")
     
     def can_start_round(self, available_devices: List[Dict]) -> bool:
         """Check if we can start a new training round."""
@@ -166,6 +195,179 @@ class FLController:
         
         logger.info(f"Model update received from {device_id}")
         return True
+    
+    async def run_real_training_round(self, 
+                                    available_devices: List[Dict],
+                                    training_config: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+        """
+        Run a complete federated learning round with real ML training.
+        
+        Args:
+            available_devices: List of available devices
+            training_config: Training configuration override
+            
+        Returns:
+            Round results with training metrics
+        """
+        if self.is_training:
+            raise ValueError("Training round already in progress")
+        
+        # Use default training config if not provided
+        default_config = {
+            "epochs": 5,
+            "learning_rate": 0.01,
+            "batch_size": 32,
+            "participation_rate": 0.3
+        }
+        config = {**default_config, **(training_config or {})}
+        
+        # Select participants
+        selected_devices = self.select_participants(available_devices)
+        num_clients = len(selected_devices)
+        
+        if num_clients < self.min_participants:
+            raise ValueError(f"Not enough participants: {num_clients} < {self.min_participants}")
+        
+        # Start round tracking
+        round_info = self.start_training_round(selected_devices, config)
+        
+        # Broadcast training start
+        if WEBSOCKET_AVAILABLE:
+            await broadcast_training_progress(self.current_round, {
+                "status": "started",
+                "participants": num_clients,
+                "config": config,
+                "start_time": self.round_start_time.isoformat()
+            })
+        
+        try:
+            # Run real ML training round
+            training_results = self.ml_trainer.run_federated_round(
+                num_clients=num_clients,
+                participation_rate=1.0,  # All selected clients participate
+                epochs=config["epochs"],
+                learning_rate=config["learning_rate"],
+                batch_size=config["batch_size"]
+            )
+            
+            # Broadcast training progress
+            if WEBSOCKET_AVAILABLE:
+                await broadcast_training_progress(self.current_round, {
+                    "status": "aggregating",
+                    "global_accuracy": training_results["global_metrics"]["test_accuracy"],
+                    "global_loss": training_results["global_metrics"]["test_loss"],
+                    "client_count": len(training_results["client_metrics"])
+                })
+            
+            # Simulate model submissions for selected devices
+            for i, device in enumerate(selected_devices):
+                device_id = device["device_id"]
+                
+                # Get client metrics if available
+                client_metrics = {}
+                if i < len(training_results["client_metrics"]):
+                    client_metrics = training_results["client_metrics"][i]
+                
+                # Create mock model data (in real implementation, this would come from edge nodes)
+                model_data = self.ml_trainer.get_model_weights()
+                
+                # Submit model update
+                self.submit_model_update(device_id, model_data, client_metrics)
+            
+            # End round and get summary
+            round_summary = self.end_training_round()
+            
+            # Store training results in database
+            await self._store_training_results(round_summary, training_results)
+            
+            # Combine results
+            complete_results = {
+                **round_summary,
+                "ml_results": training_results,
+                "global_accuracy": training_results["global_metrics"]["test_accuracy"],
+                "global_loss": training_results["global_metrics"]["test_loss"],
+                "aggregated_samples": training_results["aggregated_samples"],
+                "training_config": config
+            }
+            
+            # Broadcast completion
+            if WEBSOCKET_AVAILABLE:
+                await broadcast_training_progress(self.current_round, {
+                    "status": "completed",
+                    "global_accuracy": training_results["global_metrics"]["test_accuracy"],
+                    "global_loss": training_results["global_metrics"]["test_loss"],
+                    "duration": round_summary["duration_seconds"],
+                    "participants": round_summary["total_participants"]
+                })
+                
+                await broadcast_model_aggregation({
+                    "round_number": self.current_round,
+                    "aggregated_samples": training_results["aggregated_samples"],
+                    "client_metrics": training_results["client_metrics"],
+                    "global_metrics": training_results["global_metrics"]
+                })
+            
+            logger.info(f"Real FL round {self.current_round} completed successfully")
+            logger.info(f"Global accuracy: {training_results['global_metrics']['test_accuracy']:.2f}%")
+            
+            return complete_results
+            
+        except Exception as e:
+            # End round on error
+            if self.is_training:
+                self.end_training_round()
+            logger.error(f"Training round failed: {str(e)}")
+            raise
+    
+    async def _store_training_results(self, round_summary: Dict[str, Any], training_results: Dict[str, Any]):
+        """Store training results in database."""
+        try:
+            from pathlib import Path
+            import sqlite3
+            
+            db_path = Path(__file__).parent.parent.parent / "data" / "qflare_core.db"
+            db_path.parent.mkdir(exist_ok=True)
+            conn = sqlite3.connect(str(db_path))
+            cursor = conn.cursor()
+            
+            # Store round summary
+            cursor.execute("""
+                INSERT INTO training_rounds 
+                (round_number, start_time, end_time, participants, submitted_models, 
+                 global_accuracy, global_loss, duration_seconds)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            """, (
+                round_summary["round_number"],
+                round_summary["start_time"],
+                round_summary["end_time"],
+                round_summary["total_participants"],
+                round_summary["submitted_models"],
+                training_results["global_metrics"]["test_accuracy"],
+                training_results["global_metrics"]["test_loss"],
+                round_summary["duration_seconds"]
+            ))
+            
+            # Store client metrics
+            for client_metric in training_results.get("client_metrics", []):
+                cursor.execute("""
+                    INSERT INTO client_training_metrics
+                    (round_number, client_id, accuracy, loss, training_time, samples)
+                    VALUES (?, ?, ?, ?, ?, ?)
+                """, (
+                    round_summary["round_number"],
+                    client_metric.get("client_id", 0),
+                    client_metric.get("accuracy", 0),
+                    client_metric.get("loss", 0),
+                    client_metric.get("training_time", 0),
+                    client_metric.get("samples", 0)
+                ))
+            
+            conn.commit()
+            conn.close()
+            
+        except Exception as e:
+            logger.error(f"Failed to store training results: {str(e)}")
+            # Don't raise - training was successful even if storage failed
     
     def check_round_completion(self) -> bool:
         """Check if the current training round is complete."""

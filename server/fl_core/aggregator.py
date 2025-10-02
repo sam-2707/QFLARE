@@ -1,57 +1,97 @@
 """
 Federated Learning Aggregator
 
-This module handles model aggregation using persistent database storage.
+This module handles real model aggregation using PyTorch and database storage.
+Replaces mock aggregation with actual federated averaging algorithms.
 """
 
 import logging
 import time
-import base64
-from typing import List, Dict, Any, Optional
+import sqlite3
+import torch
+from typing import List, Dict, Any, Optional, Tuple
 from datetime import datetime
+import json
 
-from enclave.mock_enclave import get_secure_enclave, ModelUpdate
-from database import ModelService, AuditService
+from ..security.mock_enclave import mock_secure_compute
+from ..ml.models import serialize_model_weights, deserialize_model_weights, create_model
 
 logger = logging.getLogger(__name__)
 
 
-def store_model_update(device_id: str, model_weights: bytes, metadata: Dict[str, Any] = None) -> bool:
+def get_database_connection():
+    """Get database connection for aggregator operations."""
+    return sqlite3.connect("../data/qflare_core.db")
+
+
+class RealModelAggregator:
     """
-    Store a model update from a device using database backend.
+    Real model aggregator using PyTorch federated averaging.
+    Implements FedAvg algorithm with weighted averaging based on client data sizes.
+    """
     
-    Args:
-        device_id: Device identifier
-        model_weights: Model weights as bytes
-        metadata: Additional metadata about the update
+    def __init__(self, model_type: str = "mnist"):
+        self.model_type = model_type
+        self.aggregation_history = []
+        self.global_model = create_model(model_type)
         
-    Returns:
-        True if update was stored successfully, False otherwise
-    """
-    try:
-        if metadata is None:
-            metadata = {}
+    def store_model_update(self, device_id: str, model_weights: bytes, 
+                          training_metrics: Dict[str, Any] = None) -> bool:
+        """
+        Store a model update from a federated client.
         
-        # Create signature placeholder (would be verified before this call)
-        signature = b"placeholder_signature"
-        
-        success = ModelService.store_model_update(
-            device_id=device_id,
-            model_weights=model_weights,
-            signature=signature,
-            metadata=metadata
-        )
-        
-        if success:
-            logger.info(f"Model update stored for device {device_id}")
-        else:
-            logger.error(f"Failed to store model update for device {device_id}")
+        Args:
+            device_id: Device identifier
+            model_weights: Serialized PyTorch model weights
+            training_metrics: Training metrics from client
             
-        return success
-        
-    except Exception as e:
-        logger.error(f"Error storing model update for {device_id}: {e}")
-        return False
+        Returns:
+            True if update was stored successfully
+        """
+        try:
+            if training_metrics is None:
+                training_metrics = {}
+            
+            conn = get_database_connection()
+            cursor = conn.cursor()
+            
+            # Ensure table exists
+            cursor.execute("""
+                CREATE TABLE IF NOT EXISTS model_updates (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    device_id TEXT NOT NULL,
+                    model_weights BLOB NOT NULL,
+                    training_metrics TEXT,
+                    timestamp TEXT NOT NULL,
+                    status TEXT DEFAULT 'pending',
+                    samples INTEGER DEFAULT 0
+                )
+            """)
+            
+            # Store model update
+            samples = training_metrics.get('samples', 0)
+            cursor.execute("""
+                INSERT INTO model_updates 
+                (device_id, model_weights, training_metrics, timestamp, status, samples)
+                VALUES (?, ?, ?, ?, ?, ?)
+            """, (
+                device_id,
+                model_weights,
+                json.dumps(training_metrics),
+                datetime.now().isoformat(),
+                "pending",
+                samples
+            ))
+            
+            conn.commit()
+            conn.close()
+            
+            logger.info(f"Model update stored for device {device_id} ({samples} samples)")
+            return True
+            
+        except Exception as e:
+            logger.error(f"Failed to store model update for device {device_id}: {str(e)}")
+            return False
 
 
 def aggregate_models(min_updates: int = 2) -> Optional[bytes]:

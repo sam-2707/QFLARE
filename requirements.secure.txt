@@ -1,0 +1,27 @@
+# QFLARE Secure Storage Migration - Requirements
+
+# Core database and encryption dependencies
+sqlalchemy>=2.0.0
+psycopg2-binary>=2.9.0
+cryptography>=41.0.0
+
+# Cloud KMS support
+boto3>=1.26.0
+botocore>=1.29.0
+
+# Optional: Azure Key Vault support
+# azure-keyvault-secrets>=4.7.0
+# azure-identity>=1.13.0
+
+# Optional: Google Cloud KMS support  
+# google-cloud-kms>=2.19.0
+
+# Async database support
+asyncpg>=0.28.0
+
+# JSON handling and validation
+pydantic>=2.0.0
+
+# Development and testing
+pytest>=7.0.0
+pytest-asyncio>=0.21.0

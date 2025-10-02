@@ -18,14 +18,20 @@ import numpy as np
 import torch
 
 from ..fl_core.fl_controller import FLController
-from ..fl_core.model_aggregator import FederatedAveraging
-from ..fl_core.security import ModelValidator
+from ..fl_core.aggregator_real import RealModelAggregator, store_model_update, aggregate_models
 from ..registry import get_registered_devices
 
 logger = logging.getLogger(__name__)
 
-# Initialize FL controller
-fl_controller = FLController()
+# Initialize FL controller with real ML training
+training_config = {
+    "dataset": "mnist",
+    "model": "mnist",
+    "data_dir": "../data",
+    "device": "auto"
+}
+fl_controller = FLController(training_config=training_config)
+real_aggregator = RealModelAggregator()
 router = APIRouter()
 
 # Global FL state
@@ -348,6 +354,93 @@ def create_initial_model():
             return x
     
     return SimpleCNN()
+
+@router.post("/fl/run_real_training")
+async def run_real_training_round(
+    target_participants: int = Form(default=5),
+    local_epochs: int = Form(default=5),
+    learning_rate: float = Form(default=0.01),
+    batch_size: int = Form(default=32)
+):
+    """Run a complete federated learning round with real ML training."""
+    try:
+        if fl_state["status"] != "idle":
+            raise HTTPException(
+                status_code=400,
+                detail=f"Cannot start real training. Current status: {fl_state['status']}"
+            )
+        
+        # Get available devices
+        registered_devices = get_registered_devices()
+        available_devices = [
+            {"device_id": device_id, **device_info}
+            for device_id, device_info in registered_devices.items()
+            if device_info.get("status") == "enrolled"
+        ]
+        
+        if len(available_devices) < 2:  # Minimum for FL
+            raise HTTPException(
+                status_code=400,
+                detail=f"Need at least 2 active devices for federated learning, have {len(available_devices)}"
+            )
+        
+        # Update FL state
+        fl_state["status"] = "training"
+        fl_state["current_round"] += 1
+        fl_state["round_start_time"] = datetime.now().isoformat()
+        
+        # Training configuration
+        training_config = {
+            "epochs": local_epochs,
+            "learning_rate": learning_rate,
+            "batch_size": batch_size,
+            "participation_rate": min(1.0, target_participants / len(available_devices))
+        }
+        
+        # Run real ML training round
+        logger.info(f"Starting real FL training round {fl_state['current_round']}")
+        training_results = await fl_controller.run_real_training_round(
+            available_devices, training_config
+        )
+        
+        # Update FL state with results
+        fl_state["status"] = "completed"
+        round_summary = {
+            "round_number": fl_state["current_round"],
+            "global_accuracy": training_results["global_accuracy"],
+            "global_loss": training_results["global_loss"],
+            "participants": training_results["total_participants"],
+            "aggregated_samples": training_results["aggregated_samples"],
+            "duration": training_results["duration_seconds"],
+            "timestamp": datetime.now().isoformat()
+        }
+        fl_state["training_history"].append(round_summary)
+        
+        # Reset status for next round
+        fl_state["status"] = "idle"
+        
+        logger.info(f"Real FL round {fl_state['current_round']} completed: {training_results['global_accuracy']:.2f}% accuracy")
+        
+        return JSONResponse({
+            "success": True,
+            "message": f"Real FL training round {fl_state['current_round']} completed successfully",
+            "results": {
+                "round_number": fl_state["current_round"],
+                "global_accuracy": training_results["global_accuracy"],
+                "global_loss": training_results["global_loss"],
+                "participants": training_results["total_participants"],
+                "submitted_models": training_results["submitted_models"],
+                "aggregated_samples": training_results["aggregated_samples"],
+                "training_duration": training_results["duration_seconds"],
+                "client_metrics": training_results["ml_results"]["client_metrics"],
+                "training_config": training_config
+            }
+        })
+        
+    except Exception as e:
+        fl_state["status"] = "idle"  # Reset on error
+        logger.error(f"Real FL training failed: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Real FL training failed: {str(e)}")
 
 def serialize_model(model):
     """Serialize PyTorch model to bytes."""

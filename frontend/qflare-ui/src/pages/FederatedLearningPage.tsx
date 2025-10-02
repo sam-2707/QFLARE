@@ -31,11 +31,11 @@ import {
   Computer,
   CloudUpload,
   Analytics,
-  Security,
 } from '@mui/icons-material';
+import { useFLWebSocket } from '../hooks/useWebSocket';
 
 // API Configuration
-const API_BASE_URL = 'http://localhost:8080';
+const API_BASE_URL = 'http://localhost:8000';
 
 interface FLStatus {
   available: boolean;
@@ -68,6 +68,19 @@ const FederatedLearningPage: React.FC = () => {
     learning_rate: 0.01,
     total_rounds: 10,
   });
+  
+  // WebSocket connection for real-time updates
+  const {
+    isConnected: wsConnected,
+    connectionStatus,
+    flStatus: wsFlStatus,
+    trainingProgress,
+    modelAggregation,
+    deviceStatus,
+    errorNotification,
+    clearError,
+    sendMessage
+  } = useFLWebSocket();
 
   // Fetch FL status
   const fetchFLStatus = async () => {
@@ -140,13 +153,64 @@ const FederatedLearningPage: React.FC = () => {
     }
   };
 
+  // Handle WebSocket FL status updates
   useEffect(() => {
-    fetchFLStatus();
-    
-    // Auto-refresh every 30 seconds
-    const interval = setInterval(fetchFLStatus, 30000);
-    return () => clearInterval(interval);
-  }, []);
+    if (wsFlStatus) {
+      setFlStatus(wsFlStatus);
+      setLoading(false);
+      setError(null);
+    }
+  }, [wsFlStatus]);
+
+  // Handle WebSocket training progress updates
+  useEffect(() => {
+    if (trainingProgress) {
+      console.log('Training progress update:', trainingProgress);
+      // Update FL status with training progress
+      if (flStatus) {
+        setFlStatus(prev => prev ? {
+          ...prev,
+          status: trainingProgress.status,
+          current_round: trainingProgress.round_number || prev.current_round
+        } : prev);
+      }
+    }
+  }, [trainingProgress, flStatus]);
+
+  // Handle WebSocket model aggregation updates
+  useEffect(() => {
+    if (modelAggregation) {
+      console.log('Model aggregation update:', modelAggregation);
+      // Could show aggregation results in a notification or update UI
+    }
+  }, [modelAggregation]);
+
+  // Handle WebSocket device status updates
+  useEffect(() => {
+    if (deviceStatus) {
+      console.log('Device status update:', deviceStatus);
+      // Update device counts or status
+    }
+  }, [deviceStatus]);
+
+  // Handle WebSocket error notifications
+  useEffect(() => {
+    if (errorNotification) {
+      setError(errorNotification.message || 'WebSocket error occurred');
+      // Auto-clear error after 10 seconds
+      setTimeout(() => {
+        clearError();
+        setError(null);
+      }, 10000);
+    }
+  }, [errorNotification, clearError]);
+
+  // Initial fetch if WebSocket is not connected
+  useEffect(() => {
+    if (!wsConnected) {
+      fetchFLStatus();
+    }
+  }, [wsConnected]);
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -186,6 +250,19 @@ const FederatedLearningPage: React.FC = () => {
       <Typography variant="subtitle1" color="text.secondary" gutterBottom>
         Manage and monitor federated learning training rounds
       </Typography>
+
+      {/* WebSocket Connection Status */}
+      <Box display="flex" alignItems="center" gap={1} sx={{ mb: 2 }}>
+        <Typography variant="body2" color="text.secondary">
+          Real-time connection:
+        </Typography>
+        <Chip 
+          label={wsConnected ? 'Connected' : connectionStatus}
+          color={wsConnected ? 'success' : 'default'}
+          size="small"
+          variant={wsConnected ? 'filled' : 'outlined'}
+        />
+      </Box>
 
       {error && (
         <Alert severity="error" sx={{ mb: 3 }}>

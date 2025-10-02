@@ -1,14 +1,12 @@
 # QFLARE Production Deployment
 # Complete federated learning platform with TEE security
 
-version: '3.8'
-
 networks:
   qflare-network:
     driver: bridge
     ipam:
       config:
-        - subnet: 172.20.0.0/16
+        - subnet: 172.25.0.0/16
 
 volumes:
   postgres-data:
@@ -72,7 +70,7 @@ services:
   cert-manager:
     image: qflare/cert-manager:latest
     build:
-      context: .
+      context: ..
       dockerfile: docker/Dockerfile.cert-manager
     container_name: qflare-cert-manager
     volumes:
@@ -89,7 +87,7 @@ services:
   qflare-server:
     image: qflare/server:latest
     build:
-      context: .
+      context: ..
       dockerfile: docker/Dockerfile.server
       target: production
     container_name: qflare-server
@@ -152,7 +150,7 @@ services:
   qflare-edge-1:
     image: qflare/edge:latest
     build:
-      context: .
+      context: ..
       dockerfile: docker/Dockerfile.edge
       target: production
     container_name: qflare-edge-1
@@ -276,7 +274,7 @@ services:
   backup:
     image: qflare/backup:latest
     build:
-      context: .
+      context: ..
       dockerfile: docker/Dockerfile.backup
     container_name: qflare-backup
     environment:

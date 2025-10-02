@@ -42,6 +42,9 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
     { text: 'Secure Registration', icon: <Security />, path: '/secure-register' },
     { text: 'Devices', icon: <DeviceHub />, path: '/devices' },
     { text: 'Admin Dashboard', icon: <AdminPanelSettings />, path: '/admin' },
+    { text: 'Federated Learning', icon: <Security />, path: '/fl' },
+    { text: 'Device Management', icon: <DeviceHub />, path: '/device-management' },
+    { text: 'Training Control', icon: <AdminPanelSettings />, path: '/training-control' },
   ];
 
   const handleDrawerToggle = () => {
