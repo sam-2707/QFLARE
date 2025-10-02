@@ -6,19 +6,19 @@ Write-Host ""
 
 # Check if pdflatex is available
 if (Get-Command pdflatex -ErrorAction SilentlyContinue) {
-    Write-Host "Trying main.tex first..." -ForegroundColor Yellow
+    Write-Host "Trying QFLARE_IEEE_Paper.tex (main comprehensive paper)..." -ForegroundColor Yellow
     
-    # First attempt with main.tex
-    $result = & pdflatex -interaction=nonstopmode main.tex 2>&1
+    # First attempt with the main comprehensive paper
+    $result = & pdflatex -interaction=nonstopmode QFLARE_IEEE_Paper.tex 2>&1
     if ($LASTEXITCODE -eq 0) {
         Write-Host "First pass completed successfully" -ForegroundColor Green
         Write-Host "Running second pass for references..." -ForegroundColor Yellow
         
-        $result = & pdflatex -interaction=nonstopmode main.tex 2>&1
+        $result = & pdflatex -interaction=nonstopmode QFLARE_IEEE_Paper.tex 2>&1
         if ($LASTEXITCODE -eq 0) {
-            Write-Host "Compilation successful! Check main.pdf" -ForegroundColor Green
+            Write-Host "Compilation successful! Check QFLARE_IEEE_Paper.pdf (21 pages)" -ForegroundColor Green
         } else {
-            Write-Host "Second pass failed - check main.log for details" -ForegroundColor Red
+            Write-Host "Second pass failed - check QFLARE_IEEE_Paper.log for details" -ForegroundColor Red
         }
     } else {
         Write-Host "First pass failed - trying simple version..." -ForegroundColor Yellow
