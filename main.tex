@@ -1,0 +1,56 @@
+% Main compilation file for QFLARE IEEE Paper
+% Compile with: pdflatex main.tex
+
+\documentclass[journal,onecolumn]{IEEEtran}
+
+% Essential packages for IEEE journals - following IEEE Access template structure
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{amsmath,amsfonts,amssymb,amsthm}
+\usepackage{graphicx}
+\usepackage{cite}
+\usepackage{url}
+\usepackage{algorithmic}
+\usepackage{algorithm}
+\usepackage{array}
+\usepackage{booktabs}
+\usepackage{multirow}
+\usepackage{subcaption}
+\usepackage{listings}
+\usepackage{mathtools}
+\usepackage{bm}
+\usepackage{enumerate}
+\usepackage{float}
+\usepackage{color}
+\usepackage{tikz}
+\usepackage{pgfplots}
+
+% Configure pgfplots for IEEE journals
+\pgfplotsset{compat=1.18}
+
+% IEEE journal specific configurations
+\interdisplaylinepenalty=2500
+
+% Unicode character support for symbols
+\DeclareUnicodeCharacter{03B1}{\ensuremath{\alpha}}
+\DeclareUnicodeCharacter{03B5}{\ensuremath{\varepsilon}}
+\DeclareUnicodeCharacter{03B4}{\ensuremath{\delta}}
+
+% Define theorem environments following IEEE style
+\newtheorem{theorem}{Theorem}
+\newtheorem{lemma}[theorem]{Lemma}
+\newtheorem{corollary}[theorem]{Corollary}
+\newtheorem{definition}[theorem]{Definition}
+\newtheorem{proposition}[theorem]{Proposition}
+\newtheorem{example}[theorem]{Example}
+\newtheorem{remark}[theorem]{Remark}
+
+% Custom proof environment
+\newenvironment{proof}[1][Proof]{\noindent\textbf{#1.} }{\ \rule{0.5em}{0.5em}}
+
+\begin{document}
+
+% Input the main paper content
+\input{QFLARE_IEEE_Paper}
+
+\end{document}
