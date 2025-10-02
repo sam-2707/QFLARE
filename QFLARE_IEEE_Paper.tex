@@ -17,17 +17,9 @@
 \usepackage{booktabs}
 \usepackage{multirow}
 \usepackage{subcaption}
-\usepackage{listings}
 \usepackage{mathtools}
 \usepackage{bm}
 \usepackage{enumerate}
-\usepackage{float}
-\usepackage{color}
-\usepackage{tikz}
-\usepackage{pgfplots}
-
-% Configure pgfplots
-\pgfplotsset{compat=1.18}
 
 % IEEE journal specific configurations
 \interdisplaylinepenalty=2500
@@ -57,8 +49,7 @@
 % Author information - IEEE format
 \author{Samuel A. Richards,~\IEEEmembership{Student Member,~IEEE,}
         Dr. Maria Chen,~\IEEEmembership{Senior Member,~IEEE,}
-        and~Prof. David Johnson,~\IEEEmembership{Fellow,~IEEE}
-
+        and~Prof. David Johnson,~\IEEEmembership{Fellow,~IEEE}%
 % Author affiliations
 \thanks{S. A. Richards is with the School of Computer Science and Engineering, University of Technology, Sydney, NSW 2007, Australia (e-mail: samuel.richards@uts.edu.au).}
 \thanks{M. Chen is with the Department of Electrical and Computer Engineering, Stanford University, Stanford, CA 94305, USA (e-mail: maria.chen@stanford.edu).}
@@ -149,18 +140,6 @@ Our work makes the following transformative contributions to the intersection of
 
 \item \textbf{Open-Source Implementation and Reproducibility}: We provide complete open-source implementation of QFLARE with comprehensive documentation, deployment guides, and reproducible experimental scripts, enabling immediate adoption by researchers and practitioners while facilitating independent verification of our claimed results.
 \end{enumerate}
-\item \textbf{Novel Quantum-Resistant FL Architecture}: We design and implement the first complete federated learning system that integrates NIST-standardized post-quantum cryptographic primitives (CRYSTALS-Kyber and CRYSTALS-Dilithium) with advanced differential privacy mechanisms, providing comprehensive protection against quantum adversaries.
-
-\item \textbf{Rigorous Theoretical Security Analysis}: We provide formal mathematical proofs demonstrating that QFLARE achieves IND-CCA2 security for key encapsulation, EU-CMA security for digital signatures, and $(\epsilon, \delta)$-differential privacy with provable composition guarantees. Our analysis includes novel security reductions that account for the quantum setting.
-
-\item \textbf{Comprehensive Privacy Framework}: We develop a multi-layered privacy protection mechanism that combines lattice-based cryptography with calibrated noise injection, client sampling strategies, and secure aggregation protocols specifically adapted for the post-quantum era.
-
-\item \textbf{Extensive Experimental Validation}: We conduct comprehensive performance evaluation across eight benchmark datasets (MNIST, CIFAR-10, CIFAR-100, Fashion-MNIST, SVHN, FEMNIST, Shakespeare, and Reddit) and twelve different model architectures, demonstrating that QFLARE maintains practical efficiency while providing exponentially stronger security guarantees than classical FL systems.
-
-\item \textbf{Formal Verification and Mathematical Proofs}: We provide complete formal verification of our security proofs using the Isabelle/HOL theorem prover, ensuring the correctness of our theoretical claims and establishing a new standard for cryptographic rigor in federated learning research.
-
-\item \textbf{Comprehensive Security Comparison}: We present the first systematic comparison of quantum-resistant FL systems, evaluating QFLARE against existing approaches across multiple security dimensions including quantum security levels, privacy guarantees, and Byzantine fault tolerance.
-\end{enumerate}
 
 \subsection{Paper Organization}
 
@@ -203,7 +182,7 @@ But none of these papers address quantum threats. They all use classical encrypt
 
 A few recent papers have tried to add quantum resistance to federated learning, but they only partially solve the problem.
 
-\begin{table}[h]
+\begin{table}[htbp]
 \centering
 \caption{Comparison of Quantum-Resistant Federated Learning Approaches}
 \label{tab:related_comparison}
@@ -508,9 +487,6 @@ We adopt a comprehensive threat model encompassing multiple attack vectors and a
 \item \textit{Byzantine Resilience}: Correct model convergence despite presence of up to $f < n/3$ malicious participants
 \item \textit{Forward Secrecy}: Compromise of long-term keys does not compromise past session keys or model parameters
 \end{itemize}
-\item \textbf{Malicious Devices}: May deviate from protocol to compromise system integrity
-\item \textbf{Network Adversary}: Can intercept, modify, or inject network messages
-\end{enumerate}
 
 \subsection{Security Properties}
 
@@ -644,7 +620,7 @@ For the federated setup, we simulated anywhere from 10 to 10,000 participants. W
 
 Let's see how QFLARE stacks up against existing federated learning systems. The table tells the story:
 
-\begin{table}[h]
+\begin{table}[htbp]
 \centering
 \caption{Comprehensive Comparison of Federated Learning Security Frameworks}
 \label{tab:comprehensive_comparison}
@@ -674,7 +650,7 @@ QFLARE is the only one with all three: quantum resistance, strong privacy, and B
 
 Here's what we got for model accuracy across different datasets:
 
-\begin{table}[h]
+\begin{table}[htbp]
 \centering
 \caption{Accuracy Comparison Across Datasets and Non-IID Settings}
 \label{tab:accuracy_results}
@@ -702,7 +678,7 @@ Notice how everyone does worse on non-IID data. When the data is skewed across p
 
 Let's talk about speed. Here's the breakdown of where the time goes in QFLARE versus baseline FedAvg:
 
-\begin{table}[h]
+\begin{table}[htbp]
 \centering
 \caption{Performance Breakdown Per Training Round}
 \label{tab:performance_breakdown}
@@ -768,26 +744,7 @@ Total Memory & 1,999 & 160 & 6,304 & 6,260 \\
 
 \subsubsection{Network Bandwidth Analysis}
 
-\begin{figure}[h]
-\centering
-\begin{tikzpicture}
-\begin{axis}[
-    ybar,
-    xlabel={Cryptographic Scheme},
-    ylabel={Total Bandwidth (KB per FL round)},
-    symbolic x coords={RSA-2048, ECDSA-P256, Kyber-1024, Dilithium-2, QFLARE},
-    xtick=data,
-    ymin=0,
-    legend pos=north west,
-    nodes near coords,
-    x tick label style={rotate=45,anchor=east},
-]
-\addplot coordinates {(RSA-2048,12.4) (ECDSA-P256,4.2) (Kyber-1024,18.7) (Dilithium-2,24.3) (QFLARE,31.2)};
-\addlegendentry{Per-device bandwidth}
-\end{axis}
-\end{tikzpicture}
-\caption{Network bandwidth requirements for different cryptographic schemes}
-\end{figure}
+Network bandwidth analysis shows QFLARE requires 31.2 KB per device per training round, compared to 4.2 KB for ECDSA-P256 and 12.4 KB for RSA-2048. While this represents a 2.5x increase over classical approaches, the absolute bandwidth requirements remain manageable for most practical deployments.
 
 \subsection{Performance Metrics}
 
@@ -806,7 +763,7 @@ We evaluate QFLARE along the following dimensions:
 
 We conducted extensive analysis of the security-performance trade-offs across multiple dimensions:
 
-\begin{table}[h]
+\begin{table}[htbp]
 \centering
 \caption{Multi-Dimensional Security-Performance Comparison}
 \begin{tabular}{|l|c|c|c|c|c|}
@@ -823,7 +780,7 @@ QFLARE & 256 bits & 117 bits & $(0.1, 10^{-6})$ & 87\% & 9.8/10 \\
 
 \subsubsection{Scalability Analysis}
 
-\begin{figure}[h]
+\begin{figure}[htbp]
 \centering
 \begin{tikzpicture}
 \begin{axis}[
@@ -856,7 +813,7 @@ QFLARE & 256 bits & 117 bits & $(0.1, 10^{-6})$ & 87\% & 9.8/10 \\
 
 \subsubsection{Model Accuracy Under Various Conditions}
 
-\begin{table}[h]
+\begin{table}[htbp]
 \centering
 \caption{Model Accuracy Comparison Across Datasets and Conditions}
 \begin{tabular}{|l|c|c|c|c|c|}
@@ -877,7 +834,7 @@ MIMIC-III (Medical) & 76.8\% & 74.2\% & 71.9\% & 73.8\% & 73.4\% \\
 
 \subsubsection{Privacy-Utility Trade-off Analysis}
 
-\begin{figure}[h]
+\begin{figure}[htbp]
 \centering
 \begin{subfigure}{0.48\textwidth}
 \begin{tikzpicture}
@@ -945,7 +902,7 @@ MIMIC-III (Medical) & 76.8\% & 74.2\% & 71.9\% & 73.8\% & 73.4\% \\
 
 We evaluated QFLARE's resilience against various Byzantine attack scenarios:
 
-\begin{table}[h]
+\begin{table}[htbp]
 \centering
 \caption{Byzantine Attack Resistance Analysis}
 \begin{tabular}{|l|c|c|c|c|c|}
@@ -969,7 +926,7 @@ We evaluated QFLARE's resilience against various Byzantine attack scenarios:
 
 \subsubsection{Quantum Security Timeline Analysis}
 
-\begin{figure}[h]
+\begin{figure}[htbp]
 \centering
 \begin{tikzpicture}
 \begin{axis}[
@@ -1006,7 +963,7 @@ We evaluated QFLARE's resilience against various Byzantine attack scenarios:
 
 \subsubsection{Energy Efficiency Analysis}
 
-\begin{table}[h]
+\begin{table}[htbp]
 \centering
 \caption{Energy Consumption Analysis (Joules per FL round)}
 \begin{tabular}{|l|c|c|c|c|}
@@ -1027,7 +984,7 @@ Overhead vs. FedAvg & - & 1.2\% & 8.7\% & 15.1\% \\
 \textbf{Network Heterogeneity Impact}:
 We evaluated QFLARE under realistic network conditions with varying latency and bandwidth:
 
-\begin{table}[h]
+\begin{table}[htbp]
 \centering
 \caption{Performance Under Network Heterogeneity}
 \begin{tabular}{|l|c|c|c|c|}
@@ -1046,7 +1003,7 @@ Low-bandwidth & 678.9s & 84.2\% & 28.9\% & $\varepsilon = 0.22$ \\
 \textbf{Device Heterogeneity Analysis}:
 We tested QFLARE across devices with different computational capabilities:
 
-\begin{figure}[h]
+\begin{figure}[htbp]
 \centering
 \begin{tikzpicture}
 \begin{axis}[
@@ -1215,7 +1172,7 @@ We evaluated QFLARE against the most sophisticated membership inference attacks:
 
 \textbf{Model Inversion Attacks}:
 We tested against various model inversion techniques:
-\begin{table}[h]
+\begin{table}[htbp]
 \centering
 \caption{Model Inversion Attack Resistance}
 \begin{tabular}{|l|c|c|c|}
@@ -1246,7 +1203,7 @@ Results show QFLARE maintains $>85\%$ accuracy even with 30\% colluding Byzantin
 We simulated quantum attacks using classical algorithms with quantum advantage:
 
 \textbf{Quantum Cryptanalysis Simulation}:
-\begin{table}[h]
+\begin{table}[htbp]
 \centering
 \caption{Quantum Attack Simulation Results}
 \begin{tabular}{|l|c|c|c|}
@@ -1304,7 +1261,7 @@ We modeled QFLARE's protocol in Promela and verified using SPIN:
 
 Based on current quantum computing progress, we analyze QFLARE's security through 2040:
 
-\begin{table}[h]
+\begin{table}[htbp]
 \centering
 \caption{Quantum Computing Timeline vs. QFLARE Security}
 \begin{tabular}{|l|c|c|c|}
@@ -1336,7 +1293,7 @@ QFLARE is designed with algorithm agility in mind:
 
 We present a comprehensive comparison of QFLARE against existing systems across multiple security dimensions:
 
-\begin{table}[h]
+\begin{table}[htbp]
 \centering
 \caption{Comprehensive Security Framework Comparison}
 \begin{tabular}{|l|c|c|c|c|c|c|}
