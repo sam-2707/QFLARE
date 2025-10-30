@@ -1,0 +1,50 @@
+{
+  "round": 10,
+  "accuracy_history": [
+    0.5039,
+    0.6027,
+    0.7763,
+    0.8076,
+    0.8497,
+    0.8842,
+    0.898,
+    0.88,
+    0.9186,
+    0.9138
+  ],
+  "crypto_overhead_history": [
+    0.21892142295837402,
+    0.2078859806060791,
+    0.21460342407226562,
+    0.204603910446167,
+    0.20108675956726074,
+    0.20456695556640625,
+    0.20659160614013672,
+    0.2158808708190918,
+    0.2085423469543457,
+    0.2022240161895752
+  ],
+  "config": {
+    "dataset": "MNIST",
+    "data_path": "./data",
+    "num_clients": 20,
+    "samples_per_client": 100,
+    "iid": false,
+    "alpha": 0.5,
+    "model_name": "CNN",
+    "num_classes": 10,
+    "local_epochs": 5,
+    "global_rounds": 10,
+    "batch_size": 32,
+    "learning_rate": 0.01,
+    "byzantine_ratio": 0.0,
+    "differential_privacy": false,
+    "dp_epsilon": 1.0,
+    "dp_delta": 1e-05,
+    "use_post_quantum": true,
+    "kyber_variant": "Kyber1024",
+    "dilithium_variant": "Dilithium5",
+    "output_dir": "./experiments/results",
+    "save_models": false
+  }
+}

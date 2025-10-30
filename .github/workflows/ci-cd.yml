@@ -9,11 +9,31 @@ on:
     tags: [ 'v*' ]
   pull_request:
     branches: [ main ]
+  schedule:
+    # Run daily at 2 AM UTC for automated testing
+    - cron: '0 2 * * *'
+  workflow_dispatch:
+    inputs:
+      run_experiments:
+        description: 'Run full experiments'
+        required: false
+        default: 'false'
+        type: boolean
+      deploy_environment:
+        description: 'Deployment environment'
+        required: false
+        default: 'staging'
+        type: choice
+        options:
+        - staging
+        - production
 
 env:
   REGISTRY: ghcr.io
   IMAGE_NAME_SERVER: qflare/server
   IMAGE_NAME_EDGE: qflare/edge
+  PYTHON_VERSION: '3.11'
+  NODE_VERSION: '18'
 
 jobs:
   # Code Quality and Testing
@@ -137,11 +157,64 @@ jobs:
           safety-report.json
           pytest-report.xml
 
+  # QFLARE Experiments Validation
+  qflare-validation:
+    name: QFLARE Validation Tests
+    runs-on: ubuntu-latest
+    needs: test
+    timeout-minutes: 60
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ env.PYTHON_VERSION }}
+        cache: 'pip'
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+
+    - name: Create data directory
+      run: |
+        mkdir -p data/MNIST
+
+    - name: Run quick QFLARE validation
+      run: |
+        cd experiments
+        python quick_validation.py
+      timeout-minutes: 30
+
+    - name: Generate experiment configurations
+      run: |
+        cd experiments
+        python generate_configs.py --config-type paper --output-dir configs
+
+    - name: Run sample experiment
+      if: github.event.inputs.run_experiments == 'true' || github.event_name == 'schedule'
+      run: |
+        cd experiments
+        python run_qflare_experiments.py --quick --output-dir ../artifacts/quick_experiment
+      timeout-minutes: 45
+
+    - name: Upload experiment results
+      uses: actions/upload-artifact@v3
+      if: always()
+      with:
+        name: qflare-validation-results
+        path: |
+          experiments/results/
+          artifacts/
+
   # Security Scanning
   security:
     name: Security Scanning
     runs-on: ubuntu-latest
-    needs: test
+    needs: [test, qflare-validation]
     
     steps:
     - name: Checkout code

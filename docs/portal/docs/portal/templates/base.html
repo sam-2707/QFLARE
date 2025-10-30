@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}{{ config.project_name }} Documentation{% endblock %}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.24.1/themes/prism.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    {% block extra_head %}{% endblock %}
+</head>
+<body>
+    <header class="header">
+        <nav class="navbar">
+            <div class="nav-brand">
+                <h1>🛡️ {{ config.project_name }}</h1>
+                <span class="version">v{{ config.version }}</span>
+            </div>
+            <div class="nav-links">
+                <a href="index.html">Home</a>
+                <a href="guides/index.html">Guides</a>
+                <a href="api/index.html">API</a>
+                <a href="deployment/index.html">Deploy</a>
+                <a href="troubleshooting/index.html">Troubleshoot</a>
+                <a href="examples.html">Examples</a>
+                <a href="search.html">🔍</a>
+            </div>
+            <div class="theme-toggle">
+                <button id="theme-toggle" class="theme-btn">🌙</button>
+            </div>
+        </nav>
+    </header>
+
+    <main class="main-content">
+        {% block content %}{% endblock %}
+    </main>
+
+    <footer class="footer">
+        <div class="footer-content">
+            <p>&copy; 2025 {{ config.project_name }} Team. Quantum-Resistant Federated Learning.</p>
+            <div class="footer-links">
+                <a href="https://github.com/sam-2707/QFLARE">GitHub</a>
+                <a href="about.html">About</a>
+                <a href="contact.html">Contact</a>
+            </div>
+        </div>
+    </footer>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.24.1/components/prism-core.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.24.1/plugins/autoloader/prism-autoloader.min.js"></script>
+    <script src="{{ url_for('static', filename='scripts.js') }}"></script>
+    {% block extra_scripts %}{% endblock %}
+</body>
+</html>

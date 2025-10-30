@@ -1,0 +1,80 @@
+{
+  "config": {
+    "dataset": "MNIST",
+    "data_path": "./data",
+    "num_clients": 20,
+    "samples_per_client": 100,
+    "iid": false,
+    "alpha": 0.5,
+    "model_name": "CNN",
+    "num_classes": 10,
+    "local_epochs": 5,
+    "global_rounds": 10,
+    "batch_size": 32,
+    "learning_rate": 0.01,
+    "byzantine_ratio": 0.0,
+    "differential_privacy": false,
+    "dp_epsilon": 1.0,
+    "dp_delta": 1e-05,
+    "use_post_quantum": true,
+    "kyber_variant": "Kyber1024",
+    "dilithium_variant": "Dilithium5",
+    "output_dir": "./experiments/results",
+    "save_models": false
+  },
+  "training_results": {
+    "final_accuracy": 0.9138,
+    "accuracy_history": [
+      0.5039,
+      0.6027,
+      0.7763,
+      0.8076,
+      0.8497,
+      0.8842,
+      0.898,
+      0.88,
+      0.9186,
+      0.9138
+    ],
+    "avg_crypto_overhead": 0.20849072933197021,
+    "total_crypto_overhead": 2.084907293319702
+  },
+  "crypto_benchmarks": {
+    "keygen": {
+      "mean_ms": 2.4221205711364746,
+      "std_ms": 0.4401744566047017,
+      "min_ms": 2.099752426147461,
+      "max_ms": 6.2408447265625,
+      "median_ms": 2.352118492126465
+    },
+    "encapsulate": {
+      "mean_ms": 1.3263845443725586,
+      "std_ms": 0.31580324457412445,
+      "min_ms": 0.9257793426513672,
+      "max_ms": 2.5713443756103516,
+      "median_ms": 1.2737512588500977
+    },
+    "sign": {
+      "mean_ms": 3.5144639015197754,
+      "std_ms": 0.36931176560137313,
+      "min_ms": 3.0760765075683594,
+      "max_ms": 6.4525604248046875,
+      "median_ms": 3.4831762313842773
+    },
+    "verify": {
+      "mean_ms": 1.865243911743164,
+      "std_ms": 0.19315630647577448,
+      "min_ms": 1.6016960144042969,
+      "max_ms": 3.2057762145996094,
+      "median_ms": 1.8608570098876953
+    }
+  },
+  "scalability_results": {
+    "10": {
+      "total_time_s": 0.09038209915161133,
+      "throughput_clients_per_s": 110.64137803687778,
+      "avg_time_per_client_ms": 9.038209915161133
+    }
+  },
+  "timestamp": 1761279342.8171406
+}

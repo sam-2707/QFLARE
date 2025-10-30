@@ -1,0 +1,189 @@
+{
+  "summary": {
+    "total_checks": 10,
+    "passed": 8,
+    "failed": 0,
+    "warnings": 2,
+    "skipped": 0,
+    "success_rate": 0.8,
+    "overall_status": "PASS"
+  },
+  "results": [
+    {
+      "name": "MNIST Dataset",
+      "status": "PASS",
+      "message": "MNIST dataset validation successful",
+      "details": {
+        "train_size": 60000,
+        "test_size": 10000,
+        "data_shape": [
+          1,
+          28,
+          28
+        ],
+        "data_range": [
+          0.0,
+          1.0
+        ],
+        "label_range": [
+          0,
+          9
+        ],
+        "checksums": {
+          "MNIST/raw/train-images-idx3-ubyte": "ba891046e6505d7aadcbbe25680a0738ad16aec93bde7f9b65e87a2fc25776db",
+          "MNIST/raw/train-labels-idx1-ubyte": "65a50cbbf4e906d70832878ad85ccda5333a97f0f4c3dd2ef09a8a9eef7101c5",
+          "MNIST/raw/t10k-images-idx3-ubyte": "0fa7898d509279e482958e8ce81c8e77db3f2f8254e26661ceb7762c4d494ce7",
+          "MNIST/raw/t10k-labels-idx1-ubyte": "ff7bcfd416de33731a308c3f266cc351222c34898ecbeaf847f06e48f7ec33f2"
+        }
+      },
+      "timestamp": 1761283357.306794
+    },
+    {
+      "name": "Custom Dataset: keys",
+      "status": "PASS",
+      "message": "Dataset found with 1 files (0.0 MB)",
+      "details": {
+        "path": "data\\keys",
+        "file_count": 1,
+        "size_mb": 0.0
+      },
+      "timestamp": 1761283357.3176172
+    },
+    {
+      "name": "Custom Dataset: logs",
+      "status": "PASS",
+      "message": "Dataset found with 0 files (0.0 MB)",
+      "details": {
+        "path": "data\\logs",
+        "file_count": 0,
+        "size_mb": 0.0
+      },
+      "timestamp": 1761283357.318131
+    },
+    {
+      "name": "Custom Dataset: models",
+      "status": "PASS",
+      "message": "Dataset found with 1 files (0.9 MB)",
+      "details": {
+        "path": "data\\models",
+        "file_count": 1,
+        "size_mb": 0.9
+      },
+      "timestamp": 1761283357.318904
+    },
+    {
+      "name": "Custom Dataset: updates",
+      "status": "PASS",
+      "message": "Dataset found with 0 files (0.0 MB)",
+      "details": {
+        "path": "data\\updates",
+        "file_count": 0,
+        "size_mb": 0.0
+      },
+      "timestamp": 1761283357.3193529
+    },
+    {
+      "name": "Model Artifacts",
+      "status": "WARNING",
+      "message": "No PyTorch model files found",
+      "details": {
+        "search_path": "data\\models"
+      },
+      "timestamp": 1761283357.321267
+    },
+    {
+      "name": "Database: device_registry.db",
+      "status": "PASS",
+      "message": "Database validation successful",
+      "details": {
+        "file_size_mb": 0.06,
+        "tables": [
+          "devices",
+          "enrollment_tokens",
+          "registration_attempts",
+          "sqlite_sequence",
+          "device_sessions"
+        ],
+        "table_row_counts": {
+          "devices": 2,
+          "enrollment_tokens": 5,
+          "registration_attempts": 2,
+          "sqlite_sequence": 1,
+          "device_sessions": 2
+        },
+        "total_rows": 12,
+        "integrity_check": "ok"
+      },
+      "timestamp": 1761283357.328328
+    },
+    {
+      "name": "Database: qflare_core.db",
+      "status": "PASS",
+      "message": "Database validation successful",
+      "details": {
+        "file_size_mb": 0.03,
+        "tables": [
+          "devices",
+          "fl_rounds",
+          "model_updates",
+          "test_ml_integration"
+        ],
+        "table_row_counts": {
+          "devices": 3,
+          "fl_rounds": 1,
+          "model_updates": 0,
+          "test_ml_integration": 1
+        },
+        "total_rows": 5,
+        "integrity_check": "ok"
+      },
+      "timestamp": 1761283357.3300772
+    },
+    {
+      "name": "Database: qflare_dev.db",
+      "status": "PASS",
+      "message": "Database validation successful",
+      "details": {
+        "file_size_mb": 0.08,
+        "tables": [
+          "health_check",
+          "devices",
+          "training_sessions",
+          "device_certificates",
+          "device_sessions",
+          "training_rounds",
+          "round_participants",
+          "model_versions",
+          "training_tasks"
+        ],
+        "table_row_counts": {
+          "health_check": 150,
+          "devices": 0,
+          "training_sessions": 0,
+          "device_certificates": 0,
+          "device_sessions": 0,
+          "training_rounds": 0,
+          "round_participants": 0,
+          "model_versions": 1,
+          "training_tasks": 0
+        },
+        "total_rows": 151,
+        "integrity_check": "ok"
+      },
+      "timestamp": 1761283357.3330114
+    },
+    {
+      "name": "Key: admin_master_key.pem",
+      "status": "WARNING",
+      "message": "Key file format not recognized as PEM",
+      "details": {
+        "file_size_bytes": 64,
+        "file_path": "data\\keys\\admin_master_key.pem",
+        "content_length": 64,
+        "key_type": "Binary or unknown format"
+      },
+      "timestamp": 1761283357.3368134
+    }
+  ],
+  "validation_timestamp": 1761283357.3371687
+}

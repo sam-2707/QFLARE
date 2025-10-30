@@ -1,0 +1,461 @@
+name: QFLARE Performance & Paper Validation
+
+on:
+  schedule:
+    # Run weekly on Sundays at 6 AM UTC
+    - cron: '0 6 * * 0'
+  workflow_dispatch:
+    inputs:
+      validation_type:
+        description: 'Type of validation to run'
+        required: true
+        default: 'quick'
+        type: choice
+        options:
+        - quick
+        - partial
+        - full
+      experiments_config:
+        description: 'Experiment configuration set'
+        required: false
+        default: 'paper'
+        type: choice
+        options:
+        - paper
+        - ablation
+        - benchmark
+        - all
+
+env:
+  PYTHON_VERSION: '3.11'
+  RESULTS_RETENTION_DAYS: 90
+
+jobs:
+  # Quick validation for basic functionality
+  quick-validation:
+    name: Quick QFLARE Validation
+    runs-on: ubuntu-latest
+    if: github.event.inputs.validation_type == 'quick' || github.event.inputs.validation_type == ''
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ env.PYTHON_VERSION }}
+        cache: 'pip'
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+
+    - name: Run quick validation
+      run: |
+        cd experiments
+        python quick_validation.py
+
+    - name: Upload quick validation results
+      uses: actions/upload-artifact@v3
+      with:
+        name: quick-validation-results
+        path: experiments/results/
+        retention-days: 30
+
+  # Partial paper validation (key metrics only)
+  partial-validation:
+    name: Partial Paper Validation
+    runs-on: ubuntu-latest
+    if: github.event.inputs.validation_type == 'partial'
+    timeout-minutes: 180
+
+    strategy:
+      matrix:
+        test: [honest_accuracy, byzantine_resilience, crypto_overhead]
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ env.PYTHON_VERSION }}
+        cache: 'pip'
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+
+    - name: Create data directory
+      run: mkdir -p data/MNIST
+
+    - name: Run ${{ matrix.test }} validation
+      run: |
+        cd experiments
+        python -c "
+        from validate_paper_results import PaperValidationSuite
+        validator = PaperValidationSuite('./paper_validation_${{ matrix.test }}')
+        
+        if '${{ matrix.test }}' == 'honest_accuracy':
+            result = validator.validate_honest_accuracy()
+        elif '${{ matrix.test }}' == 'byzantine_resilience':
+            result = validator.validate_byzantine_resilience()
+        elif '${{ matrix.test }}' == 'crypto_overhead':
+            result = validator.validate_crypto_overhead()
+        
+        print('Validation result:', result)
+        import json
+        with open('${{ matrix.test }}_result.json', 'w') as f:
+            json.dump(result, f, indent=2)
+        "
+      timeout-minutes: 120
+
+    - name: Upload partial validation results
+      uses: actions/upload-artifact@v3
+      with:
+        name: partial-validation-${{ matrix.test }}
+        path: |
+          experiments/${{ matrix.test }}_result.json
+          experiments/paper_validation_${{ matrix.test }}/
+        retention-days: 60
+
+  # Full paper validation (all metrics)
+  full-validation:
+    name: Full Paper Validation
+    runs-on: ubuntu-latest
+    if: github.event.inputs.validation_type == 'full' || github.event_name == 'schedule'
+    timeout-minutes: 480
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ env.PYTHON_VERSION }}
+        cache: 'pip'
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+
+    - name: Create data directory
+      run: mkdir -p data/MNIST
+
+    - name: Run full paper validation
+      run: |
+        cd experiments
+        python validate_paper_results.py --output-dir paper_validation_full
+      timeout-minutes: 360
+
+    - name: Generate validation report
+      run: |
+        cd experiments
+        python -c "
+        import json
+        from pathlib import Path
+        
+        # Load validation results
+        results_file = Path('paper_validation_full/paper_validation_results.json')
+        if results_file.exists():
+            with open(results_file) as f:
+                results = json.load(f)
+            
+            # Generate markdown report
+            report = '# QFLARE Paper Validation Report\n\n'
+            summary = results.get('validation_summary', {})
+            
+            report += f'**Overall Status:** {summary.get(\"overall_status\", \"UNKNOWN\")}\n'
+            report += f'**Success Rate:** {summary.get(\"success_rate\", 0):.1%}\n'
+            report += f'**Tests Passed:** {summary.get(\"passed\", 0)}/{summary.get(\"total_tests\", 0)}\n\n'
+            
+            report += '## Individual Test Results\n\n'
+            for test_name, validation in results.get('individual_validations', {}).items():
+                status = validation.get('status', 'UNKNOWN')
+                report += f'- **{test_name.replace(\"_\", \" \").title()}:** {status}\n'
+                
+                if 'achieved_accuracy' in validation:
+                    report += f'  - Achieved: {validation[\"achieved_accuracy\"]:.4f}\n'
+                    report += f'  - Target: {validation.get(\"target_accuracy\", \"N/A\")}\n'
+                elif 'achieved_throughput' in validation:
+                    report += f'  - Achieved: {validation[\"achieved_throughput\"]:.1f} updates/sec\n'
+                    report += f'  - Target: {validation.get(\"target_throughput\", \"N/A\")}\n'
+            
+            with open('validation_report.md', 'w') as f:
+                f.write(report)
+        "
+
+    - name: Upload full validation results
+      uses: actions/upload-artifact@v3
+      with:
+        name: full-validation-results
+        path: |
+          experiments/paper_validation_full/
+          experiments/validation_report.md
+        retention-days: ${{ env.RESULTS_RETENTION_DAYS }}
+
+  # Performance benchmarking
+  performance-benchmark:
+    name: Performance Benchmarking
+    runs-on: ubuntu-latest
+    if: github.event.inputs.validation_type == 'full' || github.event_name == 'schedule'
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ env.PYTHON_VERSION }}
+        cache: 'pip'
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        pip install psutil memory-profiler py-spy
+
+    - name: Run crypto performance benchmarks
+      run: |
+        cd experiments
+        python -c "
+        from run_qflare_experiments import QFLAREExperimentRunner, ExperimentConfig
+        import json
+        
+        config = ExperimentConfig()
+        runner = QFLAREExperimentRunner(config)
+        
+        print('Running crypto benchmarks...')
+        crypto_results = runner.benchmark_crypto_operations()
+        
+        print('Running scalability tests...')
+        scalability_results = runner.run_scalability_test()
+        
+        results = {
+            'crypto_benchmarks': crypto_results,
+            'scalability_results': scalability_results,
+            'timestamp': str($(date --iso-8601=seconds))
+        }
+        
+        with open('performance_benchmarks.json', 'w') as f:
+            json.dump(results, f, indent=2, default=str)
+        
+        print('Benchmarks completed!')
+        "
+
+    - name: Run memory profiling
+      run: |
+        cd experiments
+        python -m memory_profiler run_qflare_experiments.py --quick
+
+    - name: Generate performance report
+      run: |
+        cd experiments
+        python -c "
+        import json
+        import matplotlib.pyplot as plt
+        import numpy as np
+        from pathlib import Path
+        
+        # Load performance data
+        with open('performance_benchmarks.json') as f:
+            data = json.load(f)
+        
+        crypto = data['crypto_benchmarks']
+        
+        # Create performance charts
+        fig, ((ax1, ax2), (ax3, ax4)) = plt.subplots(2, 2, figsize=(12, 8))
+        
+        # Crypto operation times
+        operations = list(crypto.keys())
+        times = [crypto[op]['mean_ms'] for op in operations]
+        errors = [crypto[op]['std_ms'] for op in operations]
+        
+        ax1.bar(operations, times, yerr=errors, capsize=5)
+        ax1.set_title('Cryptographic Operation Performance')
+        ax1.set_ylabel('Time (ms)')
+        ax1.tick_params(axis='x', rotation=45)
+        
+        # Save chart
+        plt.tight_layout()
+        plt.savefig('performance_chart.png', dpi=150, bbox_inches='tight')
+        plt.close()
+        
+        print('Performance report generated!')
+        "
+
+    - name: Upload performance results
+      uses: actions/upload-artifact@v3
+      with:
+        name: performance-benchmarks
+        path: |
+          experiments/performance_benchmarks.json
+          experiments/performance_chart.png
+          experiments/*.dat
+        retention-days: ${{ env.RESULTS_RETENTION_DAYS }}
+
+  # Experiment configuration generation and testing
+  experiment-configs:
+    name: Generate & Test Experiment Configs
+    runs-on: ubuntu-latest
+    if: github.event.inputs.experiments_config != ''
+
+    strategy:
+      matrix:
+        config_type: [paper, ablation, benchmark]
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ env.PYTHON_VERSION }}
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+
+    - name: Generate ${{ matrix.config_type }} configurations
+      run: |
+        cd experiments
+        python generate_configs.py --config-type ${{ matrix.config_type }} --output-dir configs_${{ matrix.config_type }}
+
+    - name: Validate generated configurations
+      run: |
+        cd experiments
+        python -c "
+        import json
+        from pathlib import Path
+        
+        config_dir = Path('configs_${{ matrix.config_type }}')
+        
+        # Validate all JSON config files
+        valid_configs = 0
+        total_configs = 0
+        
+        for config_file in config_dir.glob('*.json'):
+            total_configs += 1
+            try:
+                with open(config_file) as f:
+                    config = json.load(f)
+                    
+                # Basic validation
+                required_fields = ['dataset', 'num_clients', 'global_rounds']
+                if all(field in config for field in required_fields):
+                    valid_configs += 1
+                    print(f'✓ {config_file.name} is valid')
+                else:
+                    print(f'✗ {config_file.name} missing required fields')
+                    
+            except json.JSONDecodeError:
+                print(f'✗ {config_file.name} invalid JSON')
+        
+        print(f'Validation summary: {valid_configs}/{total_configs} configs valid')
+        assert valid_configs == total_configs, 'Some configs are invalid'
+        "
+
+    - name: Upload experiment configurations
+      uses: actions/upload-artifact@v3
+      with:
+        name: experiment-configs-${{ matrix.config_type }}
+        path: experiments/configs_${{ matrix.config_type }}/
+        retention-days: 60
+
+  # Results summary and notification
+  summary:
+    name: Results Summary
+    runs-on: ubuntu-latest
+    needs: [quick-validation, partial-validation, full-validation, performance-benchmark, experiment-configs]
+    if: always()
+
+    steps:
+    - name: Download all artifacts
+      uses: actions/download-artifact@v3
+
+    - name: Generate summary report
+      run: |
+        echo "# QFLARE Performance & Validation Summary" > summary.md
+        echo "" >> summary.md
+        echo "**Run Date:** $(date --iso-8601=seconds)" >> summary.md
+        echo "**Trigger:** ${{ github.event_name }}" >> summary.md
+        echo "" >> summary.md
+        
+        # Check job results
+        echo "## Job Results" >> summary.md
+        echo "" >> summary.md
+        
+        jobs=(
+          "quick-validation:${{ needs.quick-validation.result }}"
+          "partial-validation:${{ needs.partial-validation.result }}"
+          "full-validation:${{ needs.full-validation.result }}"
+          "performance-benchmark:${{ needs.performance-benchmark.result }}"
+          "experiment-configs:${{ needs.experiment-configs.result }}"
+        )
+        
+        for job in "${jobs[@]}"; do
+          name="${job%%:*}"
+          result="${job##*:}"
+          if [[ "$result" == "success" ]]; then
+            echo "- ✅ $name: SUCCESS" >> summary.md
+          elif [[ "$result" == "failure" ]]; then
+            echo "- ❌ $name: FAILED" >> summary.md
+          elif [[ "$result" == "skipped" ]]; then
+            echo "- ⏭️ $name: SKIPPED" >> summary.md
+          else
+            echo "- ❓ $name: $result" >> summary.md
+          fi
+        done
+        
+        echo "" >> summary.md
+        echo "## Artifacts Generated" >> summary.md
+        echo "" >> summary.md
+        
+        if [ -d quick-validation-results ]; then
+          echo "- Quick validation results" >> summary.md
+        fi
+        
+        if [ -d full-validation-results ]; then
+          echo "- Full paper validation results" >> summary.md
+        fi
+        
+        if [ -d performance-benchmarks ]; then
+          echo "- Performance benchmark data" >> summary.md
+        fi
+        
+        cat summary.md
+
+    - name: Upload summary
+      uses: actions/upload-artifact@v3
+      with:
+        name: validation-summary
+        path: summary.md
+        retention-days: ${{ env.RESULTS_RETENTION_DAYS }}
+
+    - name: Create issue on failure
+      if: failure()
+      uses: actions/github-script@v6
+      with:
+        script: |
+          github.rest.issues.create({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            title: 'QFLARE Performance Validation Failed',
+            body: `The QFLARE performance validation workflow has failed.
+            
+            **Run ID:** ${{ github.run_id }}
+            **Trigger:** ${{ github.event_name }}
+            **Date:** ${new Date().toISOString()}
+            
+            Please check the workflow logs for details.`,
+            labels: ['bug', 'ci-failure', 'validation']
+          })

@@ -1,0 +1,9 @@
+{
+  "key_id": "dilithium_dbe3daed56952092",
+  "storage_type": "sgx",
+  "stored_at": "2025-10-26T20:03:13.908455",
+  "file_path": "data\\keys\\sgx_enclaves\\dilithium_dbe3daed56952092_sgx.enc",
+  "encryption_method": "SGX_AES256",
+  "backup_replicas": 3,
+  "access_control": "Multi-signature required"
+}

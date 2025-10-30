@@ -1,0 +1,465 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="api-reference">
+    <!-- API Header -->
+    <div class="api-header">
+        <div class="api-meta">
+            <span class="api-module">{{ module_name }}</span>
+            <span class="api-version">{{ version }}</span>
+            {% if stability %}
+            <span class="api-stability {{ stability.lower() }}">{{ stability }}</span>
+            {% endif %}
+        </div>
+        {% if module_description %}
+        <p class="api-description">{{ module_description }}</p>
+        {% endif %}
+    </div>
+
+    <!-- Module Overview -->
+    {% if overview %}
+    <section class="module-overview">
+        <h2>Overview</h2>
+        <div class="overview-content">{{ overview }}</div>
+        
+        {% if quick_example %}
+        <div class="quick-example">
+            <h3>Quick Example</h3>
+            <div class="code-block">
+                <pre><code class="language-python">{{ quick_example }}</code></pre>
+            </div>
+        </div>
+        {% endif %}
+    </section>
+    {% endif %}
+
+    <!-- Classes -->
+    {% if classes %}
+    <section class="api-classes">
+        <h2>Classes</h2>
+        {% for class_info in classes %}
+        <div class="api-class" id="{{ class_info.name }}">
+            <div class="class-header">
+                <h3>{{ class_info.name }}</h3>
+                {% if class_info.inheritance %}
+                <span class="inheritance">Inherits from: {{ class_info.inheritance|join(', ') }}</span>
+                {% endif %}
+            </div>
+            
+            {% if class_info.description %}
+            <p class="class-description">{{ class_info.description }}</p>
+            {% endif %}
+
+            <!-- Constructor -->
+            {% if class_info.constructor %}
+            <div class="method-item constructor">
+                <h4>Constructor</h4>
+                <div class="method-signature">
+                    <code>{{ class_info.name }}({{ class_info.constructor.parameters|join(', ') }})</code>
+                </div>
+                {% if class_info.constructor.description %}
+                <p>{{ class_info.constructor.description }}</p>
+                {% endif %}
+                
+                {% if class_info.constructor.parameters_detail %}
+                <div class="parameters-section">
+                    <h5>Parameters</h5>
+                    <table class="parameters-table">
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>Type</th>
+                                <th>Default</th>
+                                <th>Description</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for param in class_info.constructor.parameters_detail %}
+                            <tr>
+                                <td><code>{{ param.name }}</code></td>
+                                <td><code>{{ param.type }}</code></td>
+                                <td>{% if param.default %}<code>{{ param.default }}</code>{% else %}-{% endif %}</td>
+                                <td>{{ param.description }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% endif %}
+
+                {% if class_info.constructor.example %}
+                <div class="method-example">
+                    <h5>Example</h5>
+                    <pre><code class="language-python">{{ class_info.constructor.example }}</code></pre>
+                </div>
+                {% endif %}
+            </div>
+            {% endif %}
+
+            <!-- Methods -->
+            {% if class_info.methods %}
+            <div class="methods-section">
+                <h4>Methods</h4>
+                {% for method in class_info.methods %}
+                <div class="method-item" id="{{ class_info.name }}.{{ method.name }}">
+                    <div class="method-header">
+                        <h5>{{ method.name }}</h5>
+                        {% if method.decorators %}
+                        <div class="method-decorators">
+                            {% for decorator in method.decorators %}
+                            <span class="decorator">@{{ decorator }}</span>
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="method-signature">
+                        <code>{{ method.name }}({{ method.parameters|join(', ') }})</code>
+                        {% if method.returns %}
+                        <span class="return-type"> → {{ method.returns }}</span>
+                        {% endif %}
+                    </div>
+                    
+                    {% if method.description %}
+                    <p class="method-description">{{ method.description }}</p>
+                    {% endif %}
+
+                    {% if method.parameters_detail %}
+                    <div class="parameters-section">
+                        <h6>Parameters</h6>
+                        <table class="parameters-table">
+                            <thead>
+                                <tr>
+                                    <th>Name</th>
+                                    <th>Type</th>
+                                    <th>Default</th>
+                                    <th>Description</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for param in method.parameters_detail %}
+                                <tr>
+                                    <td><code>{{ param.name }}</code></td>
+                                    <td><code>{{ param.type }}</code></td>
+                                    <td>{% if param.default %}<code>{{ param.default }}</code>{% else %}-{% endif %}</td>
+                                    <td>{{ param.description }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% endif %}
+
+                    {% if method.returns_detail %}
+                    <div class="returns-section">
+                        <h6>Returns</h6>
+                        <p><code>{{ method.returns_detail.type }}</code> - {{ method.returns_detail.description }}</p>
+                    </div>
+                    {% endif %}
+
+                    {% if method.raises %}
+                    <div class="raises-section">
+                        <h6>Raises</h6>
+                        <ul>
+                            {% for exception in method.raises %}
+                            <li><code>{{ exception.type }}</code> - {{ exception.description }}</li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                    {% endif %}
+
+                    {% if method.example %}
+                    <div class="method-example">
+                        <h6>Example</h6>
+                        <div class="code-block">
+                            <pre><code class="language-python">{{ method.example }}</code></pre>
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    {% if method.see_also %}
+                    <div class="see-also">
+                        <h6>See Also</h6>
+                        <ul>
+                            {% for item in method.see_also %}
+                            <li><a href="#{{ item.ref }}">{{ item.name }}</a> - {{ item.description }}</li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                    {% endif %}
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+
+            <!-- Properties -->
+            {% if class_info.properties %}
+            <div class="properties-section">
+                <h4>Properties</h4>
+                {% for property in class_info.properties %}
+                <div class="property-item" id="{{ class_info.name }}.{{ property.name }}">
+                    <h5>{{ property.name }}</h5>
+                    <div class="property-signature">
+                        <code>{{ property.type }}</code>
+                        {% if property.readonly %}<span class="readonly">read-only</span>{% endif %}
+                    </div>
+                    {% if property.description %}
+                    <p>{{ property.description }}</p>
+                    {% endif %}
+                    {% if property.example %}
+                    <div class="property-example">
+                        <h6>Example</h6>
+                        <pre><code class="language-python">{{ property.example }}</code></pre>
+                    </div>
+                    {% endif %}
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+
+            <!-- Class Examples -->
+            {% if class_info.examples %}
+            <div class="class-examples">
+                <h4>Examples</h4>
+                {% for example in class_info.examples %}
+                <div class="example-item">
+                    <h5>{{ example.title }}</h5>
+                    {% if example.description %}
+                    <p>{{ example.description }}</p>
+                    {% endif %}
+                    <div class="code-block">
+                        <pre><code class="language-python">{{ example.code }}</code></pre>
+                    </div>
+                    {% if example.output %}
+                    <div class="example-output">
+                        <h6>Output</h6>
+                        <pre>{{ example.output }}</pre>
+                    </div>
+                    {% endif %}
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+        </div>
+        {% endfor %}
+    </section>
+    {% endif %}
+
+    <!-- Functions -->
+    {% if functions %}
+    <section class="api-functions">
+        <h2>Functions</h2>
+        {% for function in functions %}
+        <div class="function-item" id="{{ function.name }}">
+            <div class="function-header">
+                <h3>{{ function.name }}</h3>
+                {% if function.decorators %}
+                <div class="function-decorators">
+                    {% for decorator in function.decorators %}
+                    <span class="decorator">@{{ decorator }}</span>
+                    {% endfor %}
+                </div>
+                {% endif %}
+            </div>
+            
+            <div class="function-signature">
+                <code>{{ function.name }}({{ function.parameters|join(', ') }})</code>
+                {% if function.returns %}
+                <span class="return-type"> → {{ function.returns }}</span>
+                {% endif %}
+            </div>
+            
+            {% if function.description %}
+            <p class="function-description">{{ function.description }}</p>
+            {% endif %}
+
+            {% if function.parameters_detail %}
+            <div class="parameters-section">
+                <h4>Parameters</h4>
+                <table class="parameters-table">
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>Type</th>
+                            <th>Default</th>
+                            <th>Description</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for param in function.parameters_detail %}
+                        <tr>
+                            <td><code>{{ param.name }}</code></td>
+                            <td><code>{{ param.type }}</code></td>
+                            <td>{% if param.default %}<code>{{ param.default }}</code>{% else %}-{% endif %}</td>
+                            <td>{{ param.description }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% endif %}
+
+            {% if function.returns_detail %}
+            <div class="returns-section">
+                <h4>Returns</h4>
+                <p><code>{{ function.returns_detail.type }}</code> - {{ function.returns_detail.description }}</p>
+            </div>
+            {% endif %}
+
+            {% if function.raises %}
+            <div class="raises-section">
+                <h4>Raises</h4>
+                <ul>
+                    {% for exception in function.raises %}
+                    <li><code>{{ exception.type }}</code> - {{ exception.description }}</li>
+                    {% endfor %}
+                </ul>
+            </div>
+            {% endif %}
+
+            {% if function.example %}
+            <div class="function-example">
+                <h4>Example</h4>
+                <div class="code-block">
+                    <pre><code class="language-python">{{ function.example }}</code></pre>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+        {% endfor %}
+    </section>
+    {% endif %}
+
+    <!-- Constants -->
+    {% if constants %}
+    <section class="api-constants">
+        <h2>Constants</h2>
+        <table class="constants-table">
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Value</th>
+                    <th>Type</th>
+                    <th>Description</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for constant in constants %}
+                <tr>
+                    <td><code>{{ constant.name }}</code></td>
+                    <td><code>{{ constant.value }}</code></td>
+                    <td><code>{{ constant.type }}</code></td>
+                    <td>{{ constant.description }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </section>
+    {% endif %}
+
+    <!-- Exceptions -->
+    {% if exceptions %}
+    <section class="api-exceptions">
+        <h2>Exceptions</h2>
+        {% for exception in exceptions %}
+        <div class="exception-item" id="{{ exception.name }}">
+            <h3>{{ exception.name }}</h3>
+            {% if exception.inheritance %}
+            <p class="inheritance">Inherits from: {{ exception.inheritance|join(', ') }}</p>
+            {% endif %}
+            {% if exception.description %}
+            <p>{{ exception.description }}</p>
+            {% endif %}
+            {% if exception.attributes %}
+            <h4>Attributes</h4>
+            <ul>
+                {% for attr in exception.attributes %}
+                <li><code>{{ attr.name }}</code> ({{ attr.type }}) - {{ attr.description }}</li>
+                {% endfor %}
+            </ul>
+            {% endif %}
+        </div>
+        {% endfor %}
+    </section>
+    {% endif %}
+</div>
+
+<!-- API Navigation Sidebar -->
+<aside class="api-nav-sidebar">
+    <h3>API Navigation</h3>
+    <div class="api-nav-search">
+        <input type="text" placeholder="Search API..." class="api-search-input">
+    </div>
+    <ul class="api-nav-list">
+        {% if classes %}
+        <li class="nav-section">
+            <span class="nav-section-title">Classes</span>
+            <ul>
+                {% for class_info in classes %}
+                <li><a href="#{{ class_info.name }}">{{ class_info.name }}</a></li>
+                {% endfor %}
+            </ul>
+        </li>
+        {% endif %}
+        {% if functions %}
+        <li class="nav-section">
+            <span class="nav-section-title">Functions</span>
+            <ul>
+                {% for function in functions %}
+                <li><a href="#{{ function.name }}">{{ function.name }}</a></li>
+                {% endfor %}
+            </ul>
+        </li>
+        {% endif %}
+        {% if constants %}
+        <li class="nav-section">
+            <span class="nav-section-title">Constants</span>
+            <ul>
+                {% for constant in constants %}
+                <li><a href="#{{ constant.name }}">{{ constant.name }}</a></li>
+                {% endfor %}
+            </ul>
+        </li>
+        {% endif %}
+        {% if exceptions %}
+        <li class="nav-section">
+            <span class="nav-section-title">Exceptions</span>
+            <ul>
+                {% for exception in exceptions %}
+                <li><a href="#{{ exception.name }}">{{ exception.name }}</a></li>
+                {% endfor %}
+            </ul>
+        </li>
+        {% endif %}
+    </ul>
+</aside>
+
+<script>
+// API search functionality
+document.querySelector('.api-search-input').addEventListener('input', function(e) {
+    const searchTerm = e.target.value.toLowerCase();
+    const navItems = document.querySelectorAll('.api-nav-list li a');
+    
+    navItems.forEach(item => {
+        const text = item.textContent.toLowerCase();
+        const listItem = item.parentElement;
+        if (text.includes(searchTerm)) {
+            listItem.style.display = 'block';
+        } else {
+            listItem.style.display = 'none';
+        }
+    });
+});
+
+// Smooth scrolling for API navigation
+document.querySelectorAll('.api-nav-list a').forEach(link => {
+    link.addEventListener('click', function(e) {
+        e.preventDefault();
+        const target = document.querySelector(this.getAttribute('href'));
+        if (target) {
+            target.scrollIntoView({ behavior: 'smooth' });
+        }
+    });
+});
+</script>
+{% endblock %}

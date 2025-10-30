@@ -1,0 +1,49 @@
+updates:
+- allow:
+  - dependency-type: direct
+  - dependency-type: indirect
+  assignees:
+  - '@qflare-team/maintainers'
+  commit-message:
+    include: scope
+    prefix: security
+    prefix-development: deps-dev
+  directory: /
+  ignore:
+  - dependency-name: numpy
+    versions:
+    - < 1.20.0
+  labels:
+  - security
+  - dependencies
+  open-pull-requests-limit: 5
+  package-ecosystem: pip
+  reviewers:
+  - '@qflare-team/security'
+  schedule:
+    interval: daily
+- commit-message:
+    include: scope
+    prefix: docker
+  directory: /docker
+  labels:
+  - security
+  - docker
+  open-pull-requests-limit: 3
+  package-ecosystem: docker
+  reviewers:
+  - '@qflare-team/security'
+  schedule:
+    interval: weekly
+- commit-message:
+    include: scope
+    prefix: ci
+  directory: /
+  labels:
+  - ci
+  - security
+  open-pull-requests-limit: 3
+  package-ecosystem: github-actions
+  schedule:
+    interval: weekly
+version: 2

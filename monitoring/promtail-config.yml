@@ -1,0 +1,170 @@
+server:
+  http_listen_port: 9080
+  grpc_listen_port: 0
+
+positions:
+  filename: /tmp/positions.yaml
+
+clients:
+  - url: http://loki:3100/loki/api/v1/push
+
+scrape_configs:
+  # QFLARE Application Logs
+  - job_name: qflare-app
+    static_configs:
+      - targets:
+          - localhost
+        labels:
+          job: qflare-app
+          __path__: /qflare/logs/*.log
+    pipeline_stages:
+      - match:
+          selector: '{job="qflare-app"}'
+          stages:
+            - regex:
+                expression: '^(?P<timestamp>\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2},\d{3}) - (?P<level>\w+) - (?P<logger>[\w\.]+) - (?P<message>.*)'
+            - timestamp:
+                source: timestamp
+                format: '2006-01-02 15:04:05,000'
+            - labels:
+                level:
+                logger:
+
+  # System Logs
+  - job_name: system
+    static_configs:
+      - targets:
+          - localhost
+        labels:
+          job: system
+          __path__: /var/log/syslog
+    pipeline_stages:
+      - match:
+          selector: '{job="system"}'
+          stages:
+            - regex:
+                expression: '^(?P<timestamp>\w{3} \d{1,2} \d{2}:\d{2}:\d{2}) (?P<hostname>\S+) (?P<service>\S+): (?P<message>.*)'
+            - timestamp:
+                source: timestamp
+                format: 'Jan 02 15:04:05'
+                location: 'UTC'
+            - labels:
+                hostname:
+                service:
+
+  # Docker Container Logs
+  - job_name: docker
+    docker_sd_configs:
+      - host: unix:///var/run/docker.sock
+        refresh_interval: 5s
+        filters:
+          - name: label
+            values: ["logging=promtail"]
+    relabel_configs:
+      - source_labels: ['__meta_docker_container_name']
+        regex: '/(.*)'
+        target_label: 'container'
+      - source_labels: ['__meta_docker_container_log_stream']
+        target_label: 'logstream'
+      - source_labels: ['__meta_docker_container_label_logging_jobname']
+        target_label: 'job'
+
+  # QFLARE Performance Logs
+  - job_name: qflare-performance
+    static_configs:
+      - targets:
+          - localhost
+        labels:
+          job: qflare-performance
+          __path__: /qflare/logs/performance*.log
+    pipeline_stages:
+      - match:
+          selector: '{job="qflare-performance"}'
+          stages:
+            - json:
+                expressions:
+                  timestamp: timestamp
+                  level: level
+                  metric_type: metric_type
+                  value: value
+                  instance: instance
+            - timestamp:
+                source: timestamp
+                format: 'RFC3339'
+            - labels:
+                level:
+                metric_type:
+                instance:
+
+  # QFLARE API Logs
+  - job_name: qflare-api
+    static_configs:
+      - targets:
+          - localhost
+        labels:
+          job: qflare-api
+          __path__: /qflare/logs/api*.log
+    pipeline_stages:
+      - match:
+          selector: '{job="qflare-api"}'
+          stages:
+            - regex:
+                expression: '^(?P<timestamp>\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2},\d{3}) - (?P<level>\w+) - (?P<endpoint>[\w\/]+) - (?P<method>\w+) - (?P<status>\d+) - (?P<duration>\d+\.\d+)ms - (?P<message>.*)'
+            - timestamp:
+                source: timestamp
+                format: '2006-01-02 15:04:05,000'
+            - labels:
+                level:
+                endpoint:
+                method:
+                status:
+
+  # QFLARE Federated Learning Logs
+  - job_name: qflare-fl
+    static_configs:
+      - targets:
+          - localhost
+        labels:
+          job: qflare-fl
+          __path__: /qflare/logs/federated*.log
+    pipeline_stages:
+      - match:
+          selector: '{job="qflare-fl"}'
+          stages:
+            - json:
+                expressions:
+                  timestamp: timestamp
+                  level: level
+                  round: round
+                  client_id: client_id
+                  accuracy: accuracy
+                  message: message
+            - timestamp:
+                source: timestamp
+                format: 'RFC3339'
+            - labels:
+                level:
+                round:
+                client_id:
+
+  # QFLARE Cryptography Logs
+  - job_name: qflare-crypto
+    static_configs:
+      - targets:
+          - localhost
+        labels:
+          job: qflare-crypto
+          __path__: /qflare/logs/crypto*.log
+    pipeline_stages:
+      - match:
+          selector: '{job="qflare-crypto"}'
+          stages:
+            - regex:
+                expression: '^(?P<timestamp>\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2},\d{3}) - (?P<level>\w+) - (?P<algorithm>[\w\-]+) - (?P<operation>\w+) - (?P<duration>\d+\.\d+)ms - (?P<message>.*)'
+            - timestamp:
+                source: timestamp
+                format: '2006-01-02 15:04:05,000'
+            - labels:
+                level:
+                algorithm:
+                operation:

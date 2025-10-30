@@ -1,0 +1,72 @@
+
+QFLARE LIVE DEMONSTRATION INSTRUCTIONS
+====================================
+
+SETUP REQUIRED:
+--------------
+1. Backend running on http://localhost:8000
+2. Frontend accessible at http://localhost:3000
+3. Demo scripts ready in project directory
+
+DEMONSTRATION SCRIPTS:
+---------------------
+
+1. SECURITY SHOWCASE DEMO:
+   Command: python demo_security_showcase.py
+   Duration: 5-8 minutes
+   Shows: Key generation, attack simulation, monitoring
+   
+2. KEY MANAGEMENT DEMO:
+   Command: python key_management_demo.py
+   Duration: 3-5 minutes
+   Shows: Hardware key storage, rotation, compliance
+
+3. LIVE APPLICATION DEMO:
+   URL: http://localhost:3000
+   Login: admin / admin123
+   Duration: 5-7 minutes
+   Shows: Real-time dashboard, WebSocket connections
+
+DEMO FLOW RECOMMENDATIONS:
+-------------------------
+
+PART 1: Security Foundation (8 minutes)
+- Run security showcase demo
+- Highlight post-quantum cryptography
+- Show attack resistance simulation
+- Emphasize real-time monitoring
+
+PART 2: Key Management (5 minutes)
+- Run key management demo
+- Show secure storage locations
+- Demonstrate automatic rotation
+- Highlight compliance features
+
+PART 3: Live Application (7 minutes)
+- Navigate to frontend application
+- Login as admin user
+- Show real-time metrics
+- Demonstrate client management
+- Display connection monitoring
+
+TALKING POINTS DURING DEMO:
+--------------------------
+- "This is running live with quantum-safe encryption"
+- "Notice the real-time threat detection and response"
+- "Keys are stored across multiple secure locations"
+- "Automatic rotation ensures continuous security"
+- "Hardware enclaves provide tamper-proof protection"
+
+BACKUP PLANS:
+------------
+- If demo fails, use screenshots in docs/
+- Pre-recorded video available as backup
+- Static slides cover all key points
+- Printed competitive analysis available
+
+TROUBLESHOOTING:
+---------------
+- Backend not responding: Restart with 'python backend/professional_backend.py'
+- Frontend not loading: Check http://localhost:3000
+- Demo script errors: Ensure dependencies installed
+- Port conflicts: Use netstat to check port usage

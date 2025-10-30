@@ -1,0 +1,23 @@
+{
+  "dataset": "MNIST",
+  "data_path": "./data",
+  "num_clients": 100,
+  "samples_per_client": 600,
+  "iid": false,
+  "alpha": 0.5,
+  "model_name": "CNN",
+  "num_classes": 10,
+  "local_epochs": 5,
+  "global_rounds": 100,
+  "batch_size": 32,
+  "learning_rate": 0.01,
+  "byzantine_ratio": 0.0,
+  "differential_privacy": true,
+  "dp_epsilon": 1.0,
+  "dp_delta": 1e-05,
+  "use_post_quantum": true,
+  "kyber_variant": "Kyber1024",
+  "dilithium_variant": "Dilithium5",
+  "output_dir": "./experiments/results/dp_epsilon_1_0",
+  "save_models": false
+}

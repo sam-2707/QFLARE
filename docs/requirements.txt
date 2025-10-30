@@ -1,0 +1,89 @@
+# QFLARE: Quantum-Resistant Federated Learning Architecture
+# Unified Requirements for Reproducible Experiments
+
+# Core ML and Scientific Computing
+torch>=2.1.0
+torchvision>=0.16.0
+numpy>=1.24.0
+scipy>=1.11.0
+scikit-learn>=1.3.0
+matplotlib>=3.7.0
+seaborn>=0.12.0
+
+# Federated Learning Framework
+tensorflow-federated>=0.47.0
+flwr>=1.7.0
+
+# Post-Quantum Cryptography
+# Note: liboqs must be built from source (see scripts/install_liboqs.sh)
+pqcrypto>=0.7.3
+cryptography>=41.0.0
+
+# Fast API and Backend
+fastapi>=0.104.0
+uvicorn[standard]>=0.24.0
+pydantic>=2.4.0
+httpx>=0.25.0
+requests>=2.31.0
+python-multipart>=0.0.6
+
+# Database and Storage
+sqlalchemy>=2.0.23
+psycopg2-binary>=2.9.7
+asyncpg>=0.29.0
+sqlite-utils>=3.35.0
+
+# Cloud and Security
+boto3>=1.34.0
+azure-keyvault-secrets>=4.7.0
+azure-identity>=1.15.0
+
+# Data Processing and Analysis
+pandas>=2.1.0
+h5py>=3.9.0
+tqdm>=4.66.0
+
+# Differential Privacy
+opacus>=1.4.0
+diffprivlib>=0.6.0
+
+# Byzantine Fault Tolerance
+# Note: Custom implementation in security/ module
+
+# Testing and Development
+pytest>=7.4.0
+pytest-asyncio>=0.21.1
+pytest-benchmark>=4.0.0
+pytest-cov>=4.1.0
+black>=23.9.0
+isort>=5.12.0
+flake8>=6.1.0
+mypy>=1.6.0
+
+# Monitoring and Logging
+prometheus-client>=0.18.0
+structlog>=23.2.0
+
+# Network and Communication
+websockets>=11.0.2
+aiohttp>=3.8.6
+
+# Visualization and Reporting
+plotly>=5.17.0
+dash>=2.14.0
+jupyterlab>=4.0.0
+
+# Performance and Profiling  
+psutil>=5.9.0
+py-spy>=0.3.14
+
+# Environment and Configuration
+python-dotenv>=1.0.0
+pyyaml>=6.0.1
+click>=8.1.0
+
+# Version pinning for reproducibility
+certifi==2023.7.22
+charset-normalizer==3.3.0
+idna==3.4
+urllib3==2.0.6

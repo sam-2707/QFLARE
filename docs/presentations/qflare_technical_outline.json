@@ -1,0 +1,92 @@
+{
+  "presentation_type": "technical",
+  "title": "QFLARE: Technical Deep-dive",
+  "subtitle": "Post-Quantum Federated Learning Architecture",
+  "creation_date": "2025-10-28",
+  "total_slides": 5,
+  "estimated_duration": "45 minutes",
+  "slides": [
+    {
+      "slide_number": 1,
+      "type": "title",
+      "title": "QFLARE: Technical Deep-dive",
+      "subtitle": "Post-Quantum Federated Learning Architecture",
+      "notes": "Opening slide with strong visual impact. Include presenter credentials and context."
+    },
+    {
+      "slide_number": 2,
+      "type": "content",
+      "title": "Post-Quantum Cryptography Implementation",
+      "bullet_points": [
+        "CRYSTALS-Kyber KEM: 1184-byte public keys",
+        "CRYSTALS-Dilithium: 1952-byte public keys",
+        "Security Level: NIST Level 3 (192-bit equivalent)",
+        "Performance: 0.5ms Kyber, 0.8ms Dilithium",
+        "Integration: liboqs + OpenSSL 3.0+"
+      ],
+      "speaker_notes": "Deep technical details for engineering audiences. Reference NIST standards.",
+      "visual_elements": [
+        {
+          "type": "diagram",
+          "source": "docs/diagrams/qflare_pqc_handshake.png",
+          "position": "right_side",
+          "size": "40%"
+        }
+      ]
+    },
+    {
+      "slide_number": 3,
+      "type": "content",
+      "title": "Secure Aggregation Protocol",
+      "bullet_points": [
+        "Multi-Party Computation: (t,n)-threshold secret sharing",
+        "Homomorphic Encryption: Paillier cryptosystem",
+        "Zero-Knowledge Proofs: Range proofs for validation",
+        "Formula: Global = \u03a3(w\u1d62 \u00d7 Enc(\u2207\u03b8\u1d62 + noise)) + DP_noise",
+        "Byzantine Resilience: Tolerates t < n/3 malicious nodes"
+      ],
+      "speaker_notes": "Mathematical foundation and cryptographic protocols.",
+      "visual_elements": [
+        {
+          "type": "diagram",
+          "source": "docs/diagrams/qflare_secure_aggregation.png",
+          "position": "right_side",
+          "size": "40%"
+        }
+      ]
+    },
+    {
+      "slide_number": 4,
+      "type": "content",
+      "title": "Edge Node Architecture",
+      "bullet_points": [
+        "Hardware: 8-core ARM/x86, 16GB RAM, HSM/TPM",
+        "Capacity: 100+ concurrent clients",
+        "Components: PQC Handler, Secure Aggregator, Privacy Engine",
+        "Performance: 99.9% uptime, <50ms aggregation latency",
+        "Monitoring: Real-time metrics and anomaly detection"
+      ],
+      "speaker_notes": "Hardware specifications and deployment requirements.",
+      "visual_elements": [
+        {
+          "type": "diagram",
+          "source": "docs/diagrams/qflare_edge_node_architecture.png",
+          "position": "right_side",
+          "size": "40%"
+        }
+      ]
+    },
+    {
+      "slide_number": 5,
+      "type": "conclusion",
+      "title": "Next Steps & Contact",
+      "bullet_points": [
+        "Schedule technical demonstration",
+        "Pilot implementation planning",
+        "Security assessment and compliance review",
+        "Production deployment roadmap"
+      ],
+      "notes": "Clear call to action with specific next steps and contact information."
+    }
+  ]
+}

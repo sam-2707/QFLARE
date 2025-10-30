@@ -1,0 +1,51 @@
+{
+  "basic_functionality": {
+    "status": "PASS",
+    "final_accuracy": 0.6929,
+    "crypto_performance": {
+      "keygen": {
+        "mean_ms": 2.4271726608276367,
+        "std_ms": 0.26491627733597634,
+        "min_ms": 2.1445751190185547,
+        "max_ms": 3.9010047912597656,
+        "median_ms": 2.357006072998047
+      },
+      "encapsulate": {
+        "mean_ms": 1.415247917175293,
+        "std_ms": 0.27503326792309357,
+        "min_ms": 0.9315013885498047,
+        "max_ms": 2.310037612915039,
+        "median_ms": 1.3661384582519531
+      },
+      "sign": {
+        "mean_ms": 3.5190510749816895,
+        "std_ms": 0.21783235168910423,
+        "min_ms": 3.136157989501953,
+        "max_ms": 4.357576370239258,
+        "median_ms": 3.4952163696289062
+      },
+      "verify": {
+        "mean_ms": 1.8982505798339844,
+        "std_ms": 0.1659870720293121,
+        "min_ms": 1.6582012176513672,
+        "max_ms": 2.385377883911133,
+        "median_ms": 1.8494129180908203
+      }
+    },
+    "scalability": {
+      "10": {
+        "total_time_s": 0.09072256088256836,
+        "throughput_clients_per_s": 110.22616538508034,
+        "avg_time_per_client_ms": 9.072256088256836
+      }
+    }
+  },
+  "byzantine_detection": {
+    "status": "PASS",
+    "byzantine_accuracy": 0.4148
+  },
+  "differential_privacy": {
+    "status": "PASS",
+    "dp_accuracy": 0.098
+  }
+}

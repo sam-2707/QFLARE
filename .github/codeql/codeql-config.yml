@@ -1,0 +1,29 @@
+name: "QFLARE CodeQL Configuration"
+
+disable-default-queries: false
+
+queries:
+  - uses: security-and-quality
+  - uses: security-extended
+
+paths:
+  - server/
+  - edge_node/
+  - security/
+  - backend/
+  - frontend/src/
+
+paths-ignore:
+  - "**/test*"
+  - "**/spec*" 
+  - "**/*_test.py"
+  - "**/node_modules/"
+  - "**/venv/"
+  - "**/qflare-env/"
+  - "data/"
+  - "build/"
+
+packs:
+  python:
+    - codeql/python-queries:AlertSuppression.ql
+    - codeql/python-queries:Security/

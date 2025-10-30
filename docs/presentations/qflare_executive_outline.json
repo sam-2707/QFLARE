@@ -1,0 +1,88 @@
+{
+  "presentation_type": "executive",
+  "title": "QFLARE: Quantum-Safe Federated Learning",
+  "subtitle": "Protecting Against Data Breaches in the Post-Quantum Era",
+  "creation_date": "2025-10-28",
+  "total_slides": 6,
+  "estimated_duration": "15 minutes",
+  "slides": [
+    {
+      "slide_number": 1,
+      "type": "title",
+      "title": "QFLARE: Quantum-Safe Federated Learning",
+      "subtitle": "Protecting Against Data Breaches in the Post-Quantum Era",
+      "notes": "Opening slide with strong visual impact. Include presenter credentials and context."
+    },
+    {
+      "slide_number": 2,
+      "type": "content",
+      "title": "The Data Privacy Crisis",
+      "bullet_points": [
+        "\ud83d\udcca 4.1 billion records breached in 2019",
+        "\ud83d\udcb0 Average breach cost: $4.24M (IBM Security Report)",
+        "\ud83d\udd2e Current encryption obsolete by 2030-2035",
+        "\u26a0\ufe0f Federated learning vulnerable to gradient attacks"
+      ],
+      "speaker_notes": "Start with compelling statistics to establish urgency. Reference IBM Cost of Data Breach Report for credibility.",
+      "visual_elements": []
+    },
+    {
+      "slide_number": 3,
+      "type": "content",
+      "title": "QFLARE Solution Overview",
+      "bullet_points": [
+        "\ud83d\udee1\ufe0f Post-Quantum Cryptography (NIST standards)",
+        "\ud83d\udd10 Enhanced Privacy Protection (DP + Secure Aggregation)",
+        "\u26a1 Edge Computing Architecture",
+        "\ud83d\udcca Real-time Security Monitoring"
+      ],
+      "speaker_notes": "Highlight four key differentiators. Use our generated architecture diagram.",
+      "visual_elements": [
+        {
+          "type": "diagram",
+          "source": "docs/diagrams/qflare_overall_architecture.png",
+          "position": "right_side",
+          "size": "40%"
+        }
+      ]
+    },
+    {
+      "slide_number": 4,
+      "type": "content",
+      "title": "Performance Results",
+      "bullet_points": [
+        "\u2705 PQC handshake: <500ms on edge hardware",
+        "\u2705 Privacy protection: 52% membership inference (near random)",
+        "\u2705 Scalability: 100+ clients per edge node",
+        "\u2705 Accuracy: <3% degradation vs baseline"
+      ],
+      "speaker_notes": "Present specific metrics from our benchmark results. Emphasize production readiness.",
+      "visual_elements": []
+    },
+    {
+      "slide_number": 5,
+      "type": "content",
+      "title": "Business Impact",
+      "bullet_points": [
+        "\ud83c\udfe5 Healthcare: HIPAA-compliant multi-hospital AI",
+        "\ud83c\udfe6 Financial: Fraud detection without data sharing",
+        "\ud83c\udfed Manufacturing: Secure Industry 4.0 deployment",
+        "\ud83d\udcc8 ROI: 340% within first year (pilot results)"
+      ],
+      "speaker_notes": "Focus on concrete business applications and quantified benefits.",
+      "visual_elements": []
+    },
+    {
+      "slide_number": 6,
+      "type": "conclusion",
+      "title": "Next Steps & Contact",
+      "bullet_points": [
+        "Schedule technical demonstration",
+        "Pilot implementation planning",
+        "Security assessment and compliance review",
+        "Production deployment roadmap"
+      ],
+      "notes": "Clear call to action with specific next steps and contact information."
+    }
+  ]
+}

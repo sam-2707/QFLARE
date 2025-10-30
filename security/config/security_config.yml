@@ -1,0 +1,225 @@
+# QFLARE Security Scanning Configuration
+project_name: "QFLARE"
+version: "1.0.0"
+
+# Dependency Scanning Configuration
+dependency_scanning:
+  enabled: true
+  timeout: 180
+  severity_threshold: "LOW"
+  exclude_patterns:
+    - "*/venv/*"
+    - "*/qflare-env/*"
+    - "*/node_modules/*"
+    - "*/.git/*"
+    - "*/build/*"
+    - "*/__pycache__/*"
+    - "*/data/logs/*"
+    - "*/monitoring/grafana/data/*"
+  arguments:
+    safety:
+      - "--json"
+      - "--output"
+      - "json"
+    bandit:
+      - "-f"
+      - "json"
+      - "--skip"
+      - "B101,B601"  # Skip assert usage and shell injection for demo code
+    semgrep:
+      - "--config=auto"
+      - "--json"
+      - "--exclude=*.pyc"
+      - "--exclude=venv/"
+      - "--exclude=qflare-env/"
+    pip-audit:
+      - "--format=json"
+      - "--desc"
+
+# Static Analysis Configuration
+static_analysis:
+  enabled: true
+  timeout: 300
+  severity_threshold: "MEDIUM"
+  exclude_patterns:
+    - "*/tests/*"
+    - "*/test_*"
+    - "*_test.py"
+    - "*/migrations/*"
+    - "*/alembic/versions/*"
+    - "*/quick_demo.py"
+    - "*/comprehensive_demo.py"
+    - "*/start_qflare_simple.py"
+  custom_rules:
+    - "security/rules/qflare_crypto_rules.yml"
+    - "security/rules/federated_learning_rules.yml"
+    - "security/rules/post_quantum_crypto_rules.yml"
+
+# Container Scanning Configuration
+container_scanning:
+  enabled: true
+  timeout: 600
+  severity_threshold: "HIGH"
+  images:
+    - "qflare:latest"
+    - "qflare-server:latest"
+    - "qflare-edge:latest"
+    - "prometheus:latest"
+    - "grafana/grafana:latest"
+  arguments:
+    trivy:
+      - "--format"
+      - "json"
+      - "--timeout"
+      - "10m"
+      - "--security-checks"
+      - "vuln,config,secret"
+    docker_scout:
+      - "--format"
+      - "json"
+
+# Dynamic Application Security Testing
+dynamic_scanning:
+  enabled: false  # Only enable in staging/test environments
+  timeout: 1800   # 30 minutes
+  severity_threshold: "MEDIUM"
+  arguments:
+    base_urls:
+      - "http://localhost:8000"
+      - "http://localhost:8080"
+      - "http://localhost:3000"
+      - "https://qflare-staging.example.com"
+    auth_endpoints:
+      - "/api/v1/auth/login"
+      - "/api/auth"
+    api_endpoints:
+      - "/api/v1"
+      - "/api"
+      - "/docs"
+      - "/swagger"
+      - "/health"
+      - "/metrics"
+    websocket_endpoints:
+      - "/ws"
+      - "/websocket"
+
+# Security Policy
+security_policy:
+  max_critical_findings: 0
+  max_high_findings: 5
+  max_medium_findings: 20
+  fail_on_error: true
+  require_approval: true
+  notification_channels:
+    - "security-team"
+    - "qflare-dev-team"
+  baseline_file: "security/baselines/security_baseline.json"
+  
+# QFLARE-specific Security Rules
+qflare_specific:
+  # Post-quantum cryptography checks
+  crypto_requirements:
+    - "CRYSTALS-Kyber-1024"  # Required key encapsulation
+    - "CRYSTALS-Dilithium-5"  # Required digital signatures
+    - "AES-256-GCM"  # Required symmetric encryption
+  
+  # Federated learning security
+  fl_security_checks:
+    - "byzantine_fault_tolerance"
+    - "differential_privacy"
+    - "secure_aggregation"
+    - "model_poisoning_detection"
+  
+  # Required security headers
+  security_headers:
+    - "X-Content-Type-Options"
+    - "X-Frame-Options"
+    - "X-XSS-Protection"
+    - "Strict-Transport-Security"
+    - "Content-Security-Policy"
+
+# CI/CD Integration
+ci_integration:
+  github_actions: true
+  azure_pipelines: false
+  jenkins: false
+  slack_webhook: null
+  teams_webhook: null
+  email_notifications:
+    - "security@qflare.dev"
+    - "admin@qflare.dev"
+  sarif_upload: true
+  badge_generation: true
+  
+  # GitHub Actions specific settings
+  github:
+    upload_sarif: true
+    create_issues: true
+    comment_on_pr: true
+    status_checks: true
+
+# Report Settings
+report_formats:
+  - "html"
+  - "json"
+  - "sarif"
+  - "csv"
+report_retention_days: 90
+baseline_comparison: true
+generate_badges: true
+
+# Notification Settings
+notifications:
+  on_critical: true
+  on_high: true
+  on_medium: false
+  on_low: false
+  on_scan_failure: true
+  
+  # Channels
+  email:
+    enabled: true
+    recipients:
+      - "security@qflare.dev"
+    smtp_server: "smtp.gmail.com"
+    smtp_port: 587
+    
+  slack:
+    enabled: false
+    webhook_url: null
+    channel: "#security-alerts"
+    
+  teams:
+    enabled: false
+    webhook_url: null
+
+# Advanced Settings
+advanced:
+  parallel_scanning: true
+  max_concurrent_scans: 4
+  cache_results: true
+  cache_duration_hours: 24
+  
+  # Scan scheduling
+  scheduled_scans:
+    enabled: true
+    daily_quick_scan: "02:00"
+    weekly_full_scan: "Sunday 01:00"
+    
+  # Integration with external tools
+  integrations:
+    sonarqube:
+      enabled: false
+      url: null
+      token: null
+      
+    defectdojo:
+      enabled: false
+      url: null
+      api_key: null
+      
+    jira:
+      enabled: false
+      url: null
+      username: null
+      token: null

@@ -1,0 +1,9 @@
+{
+  "key_id": "dilithium_dbe3daed56952092",
+  "storage_type": "hsm",
+  "stored_at": "2025-10-26T20:03:13.851794",
+  "file_path": "data\\keys\\hsm_protected\\dilithium_dbe3daed56952092_hsm.enc",
+  "encryption_method": "HSM_AES256",
+  "backup_replicas": 3,
+  "access_control": "Multi-signature required"
+}

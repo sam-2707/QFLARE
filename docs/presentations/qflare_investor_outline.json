@@ -1,0 +1,71 @@
+{
+  "presentation_type": "investor",
+  "title": "QFLARE: Investment Opportunity",
+  "subtitle": "Quantum-Safe Federated Learning Market Leadership",
+  "creation_date": "2025-10-28",
+  "total_slides": 5,
+  "estimated_duration": "30 minutes",
+  "slides": [
+    {
+      "slide_number": 1,
+      "type": "title",
+      "title": "QFLARE: Investment Opportunity",
+      "subtitle": "Quantum-Safe Federated Learning Market Leadership",
+      "notes": "Opening slide with strong visual impact. Include presenter credentials and context."
+    },
+    {
+      "slide_number": 2,
+      "type": "content",
+      "title": "Market Opportunity",
+      "bullet_points": [
+        "\ud83d\udcc8 $79B Total Addressable Market by 2030",
+        "\ud83d\ude80 Federated Learning: $24B (45% CAGR)",
+        "\ud83d\udd12 Post-Quantum Crypto: $12B market",
+        "\u26a1 Edge AI Computing: $43B opportunity",
+        "\ud83e\udd47 First-mover advantage in quantum-safe FL"
+      ],
+      "speaker_notes": "Market sizing with credible sources. Emphasize first-mover position.",
+      "visual_elements": []
+    },
+    {
+      "slide_number": 3,
+      "type": "content",
+      "title": "Revenue Projections",
+      "bullet_points": [
+        "Year 1: $2M Revenue, 10 enterprise customers",
+        "Year 3: $25M Revenue, 100 enterprise customers",
+        "Year 5: $150M Revenue, 500+ customers",
+        "Model: SaaS + Professional Services + IP Licensing",
+        "Margins: 85% gross margin, <5% annual churn"
+      ],
+      "speaker_notes": "Conservative projections based on pilot customer results.",
+      "visual_elements": []
+    },
+    {
+      "slide_number": 4,
+      "type": "content",
+      "title": "Competitive Advantage",
+      "bullet_points": [
+        "\ud83e\udd47 Only quantum-safe FL platform (2-3 year lead)",
+        "\ud83d\udccb 12 pending patent applications",
+        "\ud83c\udfaf 340% ROI demonstrated in pilot deployments",
+        "\ud83c\udfc6 Production-ready performance (<500ms)",
+        "\ud83d\udee1\ufe0f Comprehensive compliance (GDPR, HIPAA, SOC 2)"
+      ],
+      "speaker_notes": "Defensible competitive moat and intellectual property.",
+      "visual_elements": []
+    },
+    {
+      "slide_number": 5,
+      "type": "conclusion",
+      "title": "Next Steps & Contact",
+      "bullet_points": [
+        "Schedule technical demonstration",
+        "Pilot implementation planning",
+        "Security assessment and compliance review",
+        "Production deployment roadmap"
+      ],
+      "notes": "Clear call to action with specific next steps and contact information."
+    }
+  ]
+}

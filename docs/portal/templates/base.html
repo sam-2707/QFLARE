@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ title }} - QFLARE Documentation</title>
+    <link rel="stylesheet" href="../static/styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.24.1/themes/prism.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <meta name="description" content="{{ description }}">
+    <meta name="keywords" content="{{ keywords }}">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🛡️</text></svg>">
+</head>
+<body>
+    <header class="header">
+        <nav class="navbar">
+            <div class="nav-brand">
+                <a href="../index.html"><h1>🛡️ QFLARE</h1></a>
+                <span class="version">v1.0.0</span>
+            </div>
+            <div class="nav-links">
+                <a href="../index.html">Home</a>
+                <a href="../guides.html">Guides</a>
+                <a href="../api.html">API</a>
+                <a href="../deployment.html">Deploy</a>
+                <a href="../troubleshooting.html">Troubleshoot</a>
+                <a href="../examples.html">Examples</a>
+                <a href="../search.html">🔍</a>
+            </div>
+            <div class="theme-toggle">
+                <button id="theme-toggle" class="theme-btn">🌙</button>
+            </div>
+        </nav>
+    </header>
+
+    <main class="main-content">
+        <!-- Breadcrumb Navigation -->
+        <nav class="breadcrumb">
+            <a href="../index.html">Home</a>
+            {% for crumb in breadcrumbs %}
+            <span class="breadcrumb-separator">></span>
+            <a href="{{ crumb.url }}">{{ crumb.title }}</a>
+            {% endfor %}
+        </nav>
+
+        <!-- Page Header -->
+        <div class="page-header">
+            <h1>{{ title }}</h1>
+            {% if subtitle %}
+            <p class="page-subtitle">{{ subtitle }}</p>
+            {% endif %}
+            {% if last_updated %}
+            <div class="page-meta">
+                <span class="last-updated">Last updated: {{ last_updated }}</span>
+                {% if reading_time %}
+                <span class="reading-time">{{ reading_time }} min read</span>
+                {% endif %}
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Table of Contents -->
+        {% if toc %}
+        <aside class="toc-sidebar">
+            <h3>Table of Contents</h3>
+            <ul class="toc-list">
+                {% for item in toc %}
+                <li class="toc-item">
+                    <a href="#{{ item.id }}" class="toc-link">{{ item.title }}</a>
+                    {% if item.children %}
+                    <ul class="toc-sublist">
+                        {% for child in item.children %}
+                        <li><a href="#{{ child.id }}">{{ child.title }}</a></li>
+                        {% endfor %}
+                    </ul>
+                    {% endif %}
+                </li>
+                {% endfor %}
+            </ul>
+        </aside>
+        {% endif %}
+
+        <!-- Main Content -->
+        <article class="doc-content">
+            {{ content }}
+        </article>
+
+        <!-- Page Navigation -->
+        <nav class="page-navigation">
+            {% if prev_page %}
+            <a href="{{ prev_page.url }}" class="nav-link prev-link">
+                <span class="nav-direction">← Previous</span>
+                <span class="nav-title">{{ prev_page.title }}</span>
+            </a>
+            {% endif %}
+            {% if next_page %}
+            <a href="{{ next_page.url }}" class="nav-link next-link">
+                <span class="nav-direction">Next →</span>
+                <span class="nav-title">{{ next_page.title }}</span>
+            </a>
+            {% endif %}
+        </nav>
+
+        <!-- Feedback Section -->
+        <div class="feedback-section">
+            <h3>Was this page helpful?</h3>
+            <div class="feedback-buttons">
+                <button class="feedback-btn positive" data-feedback="positive">👍 Yes</button>
+                <button class="feedback-btn negative" data-feedback="negative">👎 No</button>
+            </div>
+            <div class="feedback-form" style="display: none;">
+                <textarea placeholder="Please tell us how we can improve this page..."></textarea>
+                <button class="submit-feedback">Submit Feedback</button>
+            </div>
+        </div>
+    </main>
+
+    <footer class="footer">
+        <div class="footer-content">
+            <div class="footer-info">
+                <p>&copy; 2025 QFLARE Development Team. Quantum-Resistant Federated Learning with Post-Quantum Cryptography.</p>
+                <p>Built with ❤️ for secure, privacy-preserving machine learning.</p>
+            </div>
+            <div class="footer-links">
+                <a href="https://github.com/sam-2707/QFLARE" target="_blank"><i class="fab fa-github"></i> GitHub</a>
+                <a href="../about.html">About</a>
+                <a href="../contact.html">Contact</a>
+                <a href="https://qflare.dev" target="_blank">Official Website</a>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Scripts -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.24.1/components/prism-core.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.24.1/plugins/autoloader/prism-autoloader.min.js"></script>
+    <script src="../static/scripts.js"></script>
+</body>
+</html>

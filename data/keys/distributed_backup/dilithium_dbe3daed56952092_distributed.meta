@@ -1,0 +1,9 @@
+{
+  "key_id": "dilithium_dbe3daed56952092",
+  "storage_type": "distributed",
+  "stored_at": "2025-10-26T20:03:13.962272",
+  "file_path": "data\\keys\\distributed_backup\\dilithium_dbe3daed56952092_distributed.enc",
+  "encryption_method": "DISTRIBUTED_AES256",
+  "backup_replicas": 3,
+  "access_control": "Multi-signature required"
+}

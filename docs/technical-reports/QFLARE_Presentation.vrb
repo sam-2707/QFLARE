@@ -1,0 +1,37 @@
+\frametitle{Appendix: Sample Code for Chart Generation}
+
+\textbf{Python code to generate federated learning market growth chart:}
+
+\begin{lstlisting}[language=Python, basicstyle=\tiny, frame=single]
+import matplotlib.pyplot as plt
+import numpy as np
+
+# Market size data (in billions USD)
+years = [2023, 2025, 2027, 2030]
+market_size = [8.5, 12.1, 17.8, 24.4]
+
+# Create bar chart
+fig, ax = plt.subplots(figsize=(8, 6))
+bars = ax.bar(years, market_size, color='#1E90FF', alpha=0.8)
+ax.set_xlabel('Year', fontsize=12)
+ax.set_ylabel('Market Size (USD Billions)', fontsize=12)
+ax.set_title('Federated Learning Market Growth Projection', fontsize=14)
+ax.grid(axis='y', alpha=0.3)
+
+# Add value labels on bars
+for bar, value in zip(bars, market_size):
+    ax.text(bar.get_x() + bar.get_width()/2, bar.get_height() + 0.5,
+            f'${value}B', ha='center', va='bottom', fontweight='bold')
+
+plt.tight_layout()
+plt.savefig('fl_market_growth.png', dpi=300, bbox_inches='tight')
+plt.show()
+\end{lstlisting}
+
+\textbf{LaTeX equation for Byzantine-resilient aggregation:}
+\begin{verbatim}
+$$\mathbf{w}_{global}^{(t+1)} = \arg\min_{\mathbf{w}} \sum_{i \in \mathcal{S}}
+\|\mathbf{w} - \mathbf{w}_i^{(t)}\|_2$$
+\end{verbatim}
+
+% Speaker Notes: Provide practical code examples that can be used to recreate the visualizations in the presentation. This appendix adds practical value for researchers wanting to replicate or extend the work.

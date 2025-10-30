@@ -1,0 +1,95 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="hero-section">
+    <div class="hero-content">
+        <h1>🛡️ QFLARE Documentation Portal</h1>
+        <p class="hero-subtitle">{{ config.description }}</p>
+        <div class="hero-stats">
+            <div class="stat">
+                <span class="stat-number">{{ api_docs|length }}</span>
+                <span class="stat-label">API Modules</span>
+            </div>
+            <div class="stat">
+                <span class="stat-number">{{ user_guides|length }}</span>
+                <span class="stat-label">User Guides</span>
+            </div>
+            <div class="stat">
+                <span class="stat-number">{{ examples|length }}</span>
+                <span class="stat-label">Examples</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="features-grid">
+    <div class="feature-card">
+        <div class="feature-icon">📚</div>
+        <h3>User Guides</h3>
+        <p>Comprehensive guides covering all aspects of QFLARE from basic setup to advanced configurations.</p>
+        <a href="guides/index.html" class="feature-link">Explore Guides →</a>
+    </div>
+    
+    <div class="feature-card">
+        <div class="feature-icon">🔧</div>
+        <h3>API Reference</h3>
+        <p>Complete API documentation with examples, parameters, and return values for all QFLARE components.</p>
+        <a href="api/index.html" class="feature-link">Browse API →</a>
+    </div>
+    
+    <div class="feature-card">
+        <div class="feature-icon">🚀</div>
+        <h3>Deployment</h3>
+        <p>Step-by-step deployment guides for Docker, Kubernetes, cloud platforms, and production environments.</p>
+        <a href="deployment/index.html" class="feature-link">Deploy Now →</a>
+    </div>
+    
+    <div class="feature-card">
+        <div class="feature-icon">⚡</div>
+        <h3>Interactive Examples</h3>
+        <p>Runnable code examples demonstrating key QFLARE features with explanations and best practices.</p>
+        <a href="examples.html" class="feature-link">Try Examples →</a>
+    </div>
+    
+    <div class="feature-card">
+        <div class="feature-icon">🔍</div>
+        <h3>Troubleshooting</h3>
+        <p>Common issues, debugging guides, and solutions to help you resolve problems quickly.</p>
+        <a href="troubleshooting/index.html" class="feature-link">Get Help →</a>
+    </div>
+    
+    <div class="feature-card">
+        <div class="feature-icon">🔐</div>
+        <h3>Security</h3>
+        <p>Post-quantum cryptography, Byzantine fault tolerance, and comprehensive security practices.</p>
+        <a href="guides/post_quantum_cryptography.html" class="feature-link">Secure Setup →</a>
+    </div>
+</div>
+
+<div class="quick-start-section">
+    <h2>🚀 Quick Start</h2>
+    <div class="quick-start-steps">
+        <div class="step">
+            <div class="step-number">1</div>
+            <div class="step-content">
+                <h4>Install QFLARE</h4>
+                <code>pip install qflare</code>
+            </div>
+        </div>
+        <div class="step">
+            <div class="step-number">2</div>
+            <div class="step-content">
+                <h4>Run Example</h4>
+                <code>python examples/basic_client.py</code>
+            </div>
+        </div>
+        <div class="step">
+            <div class="step-number">3</div>
+            <div class="step-content">
+                <h4>Read Guides</h4>
+                <a href="guides/getting_started_with_qflare.html">Getting Started Guide</a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

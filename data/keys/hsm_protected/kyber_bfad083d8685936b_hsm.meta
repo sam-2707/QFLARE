@@ -1,0 +1,9 @@
+{
+  "key_id": "kyber_bfad083d8685936b",
+  "storage_type": "hsm",
+  "stored_at": "2025-10-26T20:03:13.682413",
+  "file_path": "data\\keys\\hsm_protected\\kyber_bfad083d8685936b_hsm.enc",
+  "encryption_method": "HSM_AES256",
+  "backup_replicas": 3,
+  "access_control": "Multi-signature required"
+}

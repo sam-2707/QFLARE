@@ -1,0 +1,57 @@
+{
+  "presentation_type": "academic",
+  "title": "Post-Quantum Security in Federated Learning",
+  "subtitle": "Research Contributions and Experimental Results",
+  "creation_date": "2025-10-28",
+  "total_slides": 4,
+  "estimated_duration": "20 minutes",
+  "slides": [
+    {
+      "slide_number": 1,
+      "type": "title",
+      "title": "Post-Quantum Security in Federated Learning",
+      "subtitle": "Research Contributions and Experimental Results",
+      "notes": "Opening slide with strong visual impact. Include presenter credentials and context."
+    },
+    {
+      "slide_number": 2,
+      "type": "content",
+      "title": "Research Problem Statement",
+      "bullet_points": [
+        "Research Question: Quantum-safe privacy-preserving ML",
+        "Gap: No production-ready PQC federated learning",
+        "Contributions: NIST PQC + FL integration",
+        "Novel: Comprehensive threat model for quantum era",
+        "Impact: First practical quantum-safe FL system"
+      ],
+      "speaker_notes": "Position within research landscape. Emphasize novel contributions.",
+      "visual_elements": []
+    },
+    {
+      "slide_number": 3,
+      "type": "content",
+      "title": "Experimental Results",
+      "bullet_points": [
+        "Datasets: MNIST, CIFAR-10, FEMNIST, Medical imaging",
+        "Performance: 1.8x overhead vs classical (target <2x)",
+        "Privacy: 52% membership inference vs 78% baseline",
+        "Security: 128-bit quantum resistance (NIST-3)",
+        "Scalability: 1000+ clients, 99.9% uptime"
+      ],
+      "speaker_notes": "Rigorous experimental methodology and statistical significance.",
+      "visual_elements": []
+    },
+    {
+      "slide_number": 4,
+      "type": "conclusion",
+      "title": "Next Steps & Contact",
+      "bullet_points": [
+        "Schedule technical demonstration",
+        "Pilot implementation planning",
+        "Security assessment and compliance review",
+        "Production deployment roadmap"
+      ],
+      "notes": "Clear call to action with specific next steps and contact information."
+    }
+  ]
+}

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import {
   Box,
   Grid,
@@ -7,7 +7,6 @@ import {
   Typography,
   Chip,
   LinearProgress,
-  Paper,
   List,
   ListItem,
   ListItemText,
@@ -15,6 +14,7 @@ import {
   Avatar,
   Button,
   Alert,
+  Skeleton,
 } from '@mui/material';
 import {
   Security as SecurityIcon,
@@ -24,11 +24,14 @@ import {
   TrendingUp,
   Warning,
   CheckCircle,
-  Error,
+  Refresh,
+  Wifi,
+  WifiOff,
 } from '@mui/icons-material';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar } from 'recharts';
 import { useAuth } from '../contexts/AuthContext';
 import UserDashboard from '../components/UserDashboard';
+import { useRealTimeMetrics, useSystemInfo, useTrainingStatus, useClients, useWebSocket } from '../hooks/useApi';
 
 // Mock data for the dashboard
 const performanceData = [
@@ -56,34 +59,13 @@ const recentActivities = [
 ];
 
 const Dashboard = () => {
-  const { isAdmin } = useAuth();
+  const { isAdmin, user } = useAuth();
   
-  // Always call hooks first, regardless of conditions
-  const [stats, setStats] = useState({
-    totalDevices: 39,
-    onlineDevices: 37,
-    activeTraining: 3,
-    securityEvents: 0,
-    avgThroughput: 267,
-    avgLatency: 2.1,
-  });
-
-  useEffect(() => {
-    // Only run effect for admin dashboard
-    if (!isAdmin) return;
-    
-    // Simulate real-time updates
-    const interval = setInterval(() => {
-      setStats(prev => ({
-        ...prev,
-        onlineDevices: 37 + Math.floor(Math.random() * 3),
-        avgThroughput: 250 + Math.floor(Math.random() * 50),
-        avgLatency: 2.0 + Math.random() * 0.5,
-      }));
-    }, 5000);
-
-    return () => clearInterval(interval);
-  }, [isAdmin]);
+  // Real-time data hooks (always call at top level)
+  const { metrics, loading: metricsLoading, error: metricsError } = useRealTimeMetrics(5000);
+  const { trainingStatus, loading: trainingLoading } = useTrainingStatus();
+  const { clients, loading: clientsLoading } = useClients();
+  const { connectionStatus } = useWebSocket(`ws://localhost:8000/ws/${user?.username || 'admin'}`);
 
   // If user is not admin, show user-specific dashboard
   if (!isAdmin) {
@@ -124,9 +106,45 @@ const Dashboard = () => {
         Dashboard Overview
       </Typography>
 
+      {/* Connection Status */}
+      <Box sx={{ mb: 2, display: 'flex', alignItems: 'center', gap: 1 }}>
+        {connectionStatus === 'Open' ? (
+          <>
+            <Wifi color="success" />
+            <Typography variant="body2" color="success.main">
+              Real-time connection active
+            </Typography>
+          </>
+        ) : (
+          <>
+            <WifiOff color="error" />
+            <Typography variant="body2" color="error.main">
+              Connection status: {connectionStatus}
+            </Typography>
+          </>
+        )}
+      </Box>
+
       {/* Alert Banner */}
-      <Alert severity="success" sx={{ mb: 3 }}>
-        <strong>System Status:</strong> All quantum-safe protocols active. 37 devices online and secure.
+      <Alert 
+        severity={metricsError ? "error" : "success"} 
+        sx={{ mb: 3 }}
+        action={
+          <Button 
+            color="inherit" 
+            size="small" 
+            onClick={() => window.location.reload()}
+            startIcon={<Refresh />}
+          >
+            Refresh
+          </Button>
+        }
+      >
+        <strong>System Status:</strong> {
+          metricsError 
+            ? "Connection error - some data may be outdated"
+            : `All quantum-safe protocols active. ${clients?.length || '0'} devices online and secure.`
+        }
       </Alert>
 
       {/* Key Metrics Cards */}
@@ -136,9 +154,13 @@ const Dashboard = () => {
             <CardContent>
               <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                 <Box>
-                  <Typography variant="h4" sx={{ fontWeight: 'bold' }}>
-                    {stats.onlineDevices}
-                  </Typography>
+                  {clientsLoading ? (
+                    <Skeleton variant="text" width={60} height={40} sx={{ bgcolor: 'rgba(255,255,255,0.2)' }} />
+                  ) : (
+                    <Typography variant="h4" sx={{ fontWeight: 'bold' }}>
+                      {clients?.length || 0}
+                    </Typography>
+                  )}
                   <Typography variant="body2" sx={{ opacity: 0.9 }}>
                     Devices Online
                   </Typography>
@@ -148,14 +170,18 @@ const Dashboard = () => {
               <Box sx={{ mt: 2 }}>
                 <LinearProgress 
                   variant="determinate" 
-                  value={(stats.onlineDevices / stats.totalDevices) * 100}
+                  value={Array.isArray(clients) && clients.length > 0 ? (clients.filter((c: any) => c.status === 'connected').length / clients.length) * 100 : 0}
                   sx={{ 
                     backgroundColor: 'rgba(255,255,255,0.3)',
                     '& .MuiLinearProgress-bar': { backgroundColor: 'white' }
                   }}
                 />
                 <Typography variant="caption" sx={{ mt: 1, display: 'block' }}>
-                  {stats.onlineDevices}/{stats.totalDevices} Active
+                  {clientsLoading ? (
+                    <Skeleton variant="text" width={60} sx={{ bgcolor: 'rgba(255,255,255,0.2)' }} />
+                  ) : (
+                    `${Array.isArray(clients) ? clients.filter((c: any) => c.status === 'connected').length : 0}/${Array.isArray(clients) ? clients.length : 0} Active`
+                  )}
                 </Typography>
               </Box>
             </CardContent>
@@ -167,24 +193,32 @@ const Dashboard = () => {
             <CardContent>
               <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                 <Box>
-                  <Typography variant="h4" sx={{ fontWeight: 'bold' }}>
-                    {stats.activeTraining}
-                  </Typography>
+                  {trainingLoading ? (
+                    <Skeleton variant="text" width={40} height={40} sx={{ bgcolor: 'rgba(255,255,255,0.2)' }} />
+                  ) : (
+                    <Typography variant="h4" sx={{ fontWeight: 'bold' }}>
+                      {trainingStatus?.active_sessions || 0}
+                    </Typography>
+                  )}
                   <Typography variant="body2" sx={{ opacity: 0.9 }}>
                     Active Training
                   </Typography>
                 </Box>
                 <MLIcon sx={{ fontSize: 40, opacity: 0.8 }} />
               </Box>
-              <Chip 
-                label="FL Round 15" 
-                size="small" 
-                sx={{ 
-                  mt: 2, 
-                  backgroundColor: 'rgba(255,255,255,0.2)', 
-                  color: 'white' 
-                }}
-              />
+              {trainingLoading ? (
+                <Skeleton variant="rounded" width={80} height={24} sx={{ mt: 2, bgcolor: 'rgba(255,255,255,0.2)' }} />
+              ) : (
+                <Chip 
+                  label={`FL Round ${trainingStatus?.current_round || 0}`} 
+                  size="small" 
+                  sx={{ 
+                    mt: 2, 
+                    backgroundColor: 'rgba(255,255,255,0.2)', 
+                    color: 'white' 
+                  }}
+                />
+              )}
             </CardContent>
           </Card>
         </Grid>
@@ -194,18 +228,26 @@ const Dashboard = () => {
             <CardContent>
               <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                 <Box>
-                  <Typography variant="h4" sx={{ fontWeight: 'bold' }}>
-                    {stats.avgThroughput}
-                  </Typography>
+                  {metricsLoading ? (
+                    <Skeleton variant="text" width={60} height={40} sx={{ bgcolor: 'rgba(255,255,255,0.2)' }} />
+                  ) : (
+                    <Typography variant="h4" sx={{ fontWeight: 'bold' }}>
+                      {Math.round(metrics?.throughput || 0)}
+                    </Typography>
+                  )}
                   <Typography variant="body2" sx={{ opacity: 0.9 }}>
                     Ops/sec
                   </Typography>
                 </Box>
                 <SpeedIcon sx={{ fontSize: 40, opacity: 0.8 }} />
               </Box>
-              <Typography variant="caption" sx={{ mt: 2, display: 'block' }}>
-                Avg Latency: {stats.avgLatency.toFixed(1)}ms
-              </Typography>
+              {metricsLoading ? (
+                <Skeleton variant="text" width={80} sx={{ mt: 2, bgcolor: 'rgba(255,255,255,0.2)' }} />
+              ) : (
+                <Typography variant="caption" sx={{ mt: 2, display: 'block' }}>
+                  Avg Latency: {(metrics?.latency || 0).toFixed(1)}ms
+                </Typography>
+              )}
             </CardContent>
           </Card>
         </Grid>
@@ -215,9 +257,13 @@ const Dashboard = () => {
             <CardContent>
               <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                 <Box>
-                  <Typography variant="h4" sx={{ fontWeight: 'bold' }}>
-                    {stats.securityEvents}
-                  </Typography>
+                  {metricsLoading ? (
+                    <Skeleton variant="text" width={40} height={40} sx={{ bgcolor: 'rgba(255,255,255,0.2)' }} />
+                  ) : (
+                    <Typography variant="h4" sx={{ fontWeight: 'bold' }}>
+                      {metrics?.security_events || 0}
+                    </Typography>
+                  )}
                   <Typography variant="body2" sx={{ opacity: 0.9 }}>
                     Security Events
                   </Typography>

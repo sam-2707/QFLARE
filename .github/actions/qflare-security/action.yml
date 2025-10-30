@@ -1,0 +1,138 @@
+name: 'QFLARE Security Scanner'
+description: 'Comprehensive security scanning for QFLARE quantum-resistant federated learning'
+author: 'QFLARE Team'
+
+branding:
+  icon: 'shield'
+  color: 'blue'
+
+inputs:
+  project-path:
+    description: 'Path to the QFLARE project'
+    required: false
+    default: '.'
+  
+  scan-types:
+    description: 'Comma-separated list of scan types (dependencies,static,container,dast)'
+    required: false
+    default: 'dependencies,static,container'
+    
+  output-format:
+    description: 'Output format for reports (html,json,sarif,csv)'
+    required: false
+    default: 'html,json,sarif'
+    
+  severity-threshold:
+    description: 'Minimum severity level to report (LOW,MEDIUM,HIGH,CRITICAL)'
+    required: false
+    default: 'LOW'
+    
+  upload-sarif:
+    description: 'Upload SARIF results to GitHub Security tab'
+    required: false
+    default: 'true'
+    
+  fail-on-high:
+    description: 'Fail the action if high severity issues are found'
+    required: false
+    default: 'false'
+
+outputs:
+  total-findings:
+    description: 'Total number of security findings'
+    value: ${{ steps.scan.outputs.total-findings }}
+    
+  critical-findings:
+    description: 'Number of critical security findings'
+    value: ${{ steps.scan.outputs.critical-findings }}
+    
+  high-findings:
+    description: 'Number of high severity findings'
+    value: ${{ steps.scan.outputs.high-findings }}
+    
+  report-path:
+    description: 'Path to the generated security report'
+    value: ${{ steps.scan.outputs.report-path }}
+
+runs:
+  using: 'composite'
+  steps:
+    - name: 🛠️ Setup Security Tools
+      shell: bash
+      run: |
+        # Install Python security tools
+        pip install safety bandit semgrep pip-audit
+        
+        # Install Trivy for container scanning
+        curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh -s -- -b /usr/local/bin
+        
+        echo "Security tools installed successfully"
+        
+    - name: 🔍 Run QFLARE Security Scan
+      id: scan
+      shell: bash
+      run: |
+        # Create output directory
+        mkdir -p security/reports
+        
+        # Run security scanner
+        python ${{ inputs.project-path }}/security/security_scanner.py \
+          --project-path ${{ inputs.project-path }} \
+          --output-dir security/reports \
+          --format ${{ inputs.output-format }} \
+          --severity-threshold ${{ inputs.severity-threshold }}
+        
+        # Parse results for outputs
+        if [ -f security/reports/security_report_*.json ]; then
+          REPORT_FILE=$(ls security/reports/security_report_*.json | head -1)
+          
+          TOTAL_FINDINGS=$(python -c "
+        import json
+        with open('$REPORT_FILE') as f:
+            data = json.load(f)
+        print(data['summary']['total_findings'])
+        ")
+          
+          CRITICAL_FINDINGS=$(python -c "
+        import json
+        with open('$REPORT_FILE') as f:
+            data = json.load(f)
+        print(data['summary']['severity_breakdown'].get('CRITICAL', 0))
+        ")
+          
+          HIGH_FINDINGS=$(python -c "
+        import json
+        with open('$REPORT_FILE') as f:
+            data = json.load(f)
+        print(data['summary']['severity_breakdown'].get('HIGH', 0))
+        ")
+          
+          echo "total-findings=$TOTAL_FINDINGS" >> $GITHUB_OUTPUT
+          echo "critical-findings=$CRITICAL_FINDINGS" >> $GITHUB_OUTPUT
+          echo "high-findings=$HIGH_FINDINGS" >> $GITHUB_OUTPUT
+          echo "report-path=$REPORT_FILE" >> $GITHUB_OUTPUT
+          
+          echo "✅ Security scan completed: $TOTAL_FINDINGS findings"
+          echo "   🔴 Critical: $CRITICAL_FINDINGS"
+          echo "   🟠 High: $HIGH_FINDINGS"
+        else
+          echo "❌ Security scan failed - no report generated"
+          exit 1
+        fi
+        
+    - name: 📊 Upload SARIF Results
+      if: inputs.upload-sarif == 'true'
+      uses: github/codeql-action/upload-sarif@v3
+      with:
+        sarif_file: security/reports/security_report_*.sarif
+        
+    - name: ❌ Fail on High Severity
+      if: inputs.fail-on-high == 'true'
+      shell: bash
+      run: |
+        if [ "${{ steps.scan.outputs.high-findings }}" -gt "0" ] || [ "${{ steps.scan.outputs.critical-findings }}" -gt "0" ]; then
+          echo "❌ High or critical severity findings detected"
+          echo "Critical: ${{ steps.scan.outputs.critical-findings }}"
+          echo "High: ${{ steps.scan.outputs.high-findings }}"
+          exit 1
+        fi

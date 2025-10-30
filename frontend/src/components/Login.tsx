@@ -80,9 +80,14 @@ const Login = () => {
       return;
     }
 
-    const success = await login(credentials.username, credentials.password);
-    if (!success) {
-      setError('Invalid credentials. Please try again.');
+    try {
+      const success = await login(credentials.username, credentials.password);
+      if (!success) {
+        setError('Invalid credentials. Please check your username and password.');
+      }
+    } catch (error) {
+      console.error('Login error:', error);
+      setError('Connection error. Please try again later.');
     }
   };
 

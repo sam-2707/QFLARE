@@ -1,0 +1,9 @@
+{
+  "key_id": "kyber_bfad083d8685936b",
+  "storage_type": "distributed",
+  "stored_at": "2025-10-26T20:03:13.792970",
+  "file_path": "data\\keys\\distributed_backup\\kyber_bfad083d8685936b_distributed.enc",
+  "encryption_method": "DISTRIBUTED_AES256",
+  "backup_replicas": 3,
+  "access_control": "Multi-signature required"
+}

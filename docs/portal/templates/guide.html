@@ -1,0 +1,245 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="guide-content">
+    <!-- Guide Header -->
+    <div class="guide-header">
+        <div class="guide-meta">
+            <span class="difficulty {{ difficulty.lower() }}">{{ difficulty }}</span>
+            <span class="reading-time">{{ reading_time }}</span>
+            {% if prerequisites %}
+            <span class="prerequisites">Prerequisites: {{ prerequisites|join(', ') }}</span>
+            {% endif %}
+        </div>
+        {% if overview %}
+        <div class="guide-overview">
+            <h2>Overview</h2>
+            <p>{{ overview }}</p>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Learning Objectives -->
+    {% if learning_objectives %}
+    <div class="learning-objectives">
+        <h3>🎯 What You'll Learn</h3>
+        <ul>
+            {% for objective in learning_objectives %}
+            <li>{{ objective }}</li>
+            {% endfor %}
+        </ul>
+    </div>
+    {% endif %}
+
+    <!-- Guide Sections -->
+    {% for section in sections %}
+    <section class="guide-section" id="{{ section.id }}">
+        <h{{ section.level + 2 }}>{{ section.title }}</h{{ section.level + 2 }}>
+        
+        {% if section.description %}
+        <p class="section-description">{{ section.description }}</p>
+        {% endif %}
+
+        <!-- Code Examples -->
+        {% if section.code_examples %}
+        {% for example in section.code_examples %}
+        <div class="code-example">
+            {% if example.title %}
+            <h4>{{ example.title }}</h4>
+            {% endif %}
+            {% if example.description %}
+            <p>{{ example.description }}</p>
+            {% endif %}
+            <div class="code-block">
+                <div class="code-header">
+                    <span class="code-language">{{ example.language }}</span>
+                    <button class="copy-button" data-clipboard-target="#{{ example.id }}">Copy</button>
+                </div>
+                <pre><code id="{{ example.id }}" class="language-{{ example.language }}">{{ example.code }}</code></pre>
+            </div>
+            {% if example.output %}
+            <div class="code-output">
+                <h5>Output:</h5>
+                <pre>{{ example.output }}</pre>
+            </div>
+            {% endif %}
+            {% if example.explanation %}
+            <div class="code-explanation">
+                {{ example.explanation }}
+            </div>
+            {% endif %}
+        </div>
+        {% endfor %}
+        {% endif %}
+
+        <!-- Diagrams -->
+        {% if section.diagrams %}
+        {% for diagram in section.diagrams %}
+        <div class="diagram-container">
+            <h4>{{ diagram.title }}</h4>
+            {% if diagram.type == 'mermaid' %}
+            <div class="mermaid">
+                {{ diagram.content }}
+            </div>
+            {% elif diagram.type == 'image' %}
+            <img src="{{ diagram.src }}" alt="{{ diagram.alt }}" class="diagram-image">
+            {% endif %}
+            {% if diagram.caption %}
+            <p class="diagram-caption">{{ diagram.caption }}</p>
+            {% endif %}
+        </div>
+        {% endfor %}
+        {% endif %}
+
+        <!-- Notes and Warnings -->
+        {% if section.notes %}
+        {% for note in section.notes %}
+        <div class="note-box {{ note.type }}">
+            <div class="note-icon">
+                {% if note.type == 'warning' %}⚠️
+                {% elif note.type == 'info' %}ℹ️
+                {% elif note.type == 'tip' %}💡
+                {% elif note.type == 'important' %}❗
+                {% else %}📝
+                {% endif %}
+            </div>
+            <div class="note-content">
+                <strong>{{ note.title }}</strong>
+                <p>{{ note.content }}</p>
+            </div>
+        </div>
+        {% endfor %}
+        {% endif %}
+
+        <!-- Steps -->
+        {% if section.steps %}
+        <div class="steps-container">
+            {% for step in section.steps %}
+            <div class="step-item">
+                <div class="step-number">{{ loop.index }}</div>
+                <div class="step-content">
+                    <h4>{{ step.title }}</h4>
+                    <p>{{ step.description }}</p>
+                    {% if step.code %}
+                    <div class="step-code">
+                        <pre><code class="language-{{ step.language or 'bash' }}">{{ step.code }}</code></pre>
+                    </div>
+                    {% endif %}
+                    {% if step.result %}
+                    <div class="step-result">
+                        <strong>Expected Result:</strong>
+                        <p>{{ step.result }}</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        <!-- Content -->
+        {% if section.content %}
+        <div class="section-content">
+            {{ section.content }}
+        </div>
+        {% endif %}
+    </section>
+    {% endfor %}
+
+    <!-- Troubleshooting -->
+    {% if troubleshooting %}
+    <section class="troubleshooting-section">
+        <h3>🔧 Troubleshooting</h3>
+        {% for issue in troubleshooting %}
+        <div class="troubleshooting-item">
+            <h4>{{ issue.problem }}</h4>
+            <p><strong>Cause:</strong> {{ issue.cause }}</p>
+            <p><strong>Solution:</strong> {{ issue.solution }}</p>
+            {% if issue.code %}
+            <pre><code class="language-{{ issue.language or 'bash' }}">{{ issue.code }}</code></pre>
+            {% endif %}
+        </div>
+        {% endfor %}
+    </section>
+    {% endif %}
+
+    <!-- Next Steps -->
+    {% if next_steps %}
+    <section class="next-steps-section">
+        <h3>🚀 Next Steps</h3>
+        <ul class="next-steps-list">
+            {% for step in next_steps %}
+            <li>
+                <a href="{{ step.url }}">{{ step.title }}</a>
+                <p>{{ step.description }}</p>
+            </li>
+            {% endfor %}
+        </ul>
+    </section>
+    {% endif %}
+
+    <!-- Related Guides -->
+    {% if related_guides %}
+    <section class="related-guides-section">
+        <h3>📚 Related Guides</h3>
+        <div class="related-guides-grid">
+            {% for guide in related_guides %}
+            <div class="related-guide-card">
+                <h4><a href="{{ guide.url }}">{{ guide.title }}</a></h4>
+                <p>{{ guide.description }}</p>
+                <div class="guide-meta">
+                    <span class="difficulty {{ guide.difficulty.lower() }}">{{ guide.difficulty }}</span>
+                    <span class="reading-time">{{ guide.reading_time }}</span>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </section>
+    {% endif %}
+</div>
+
+<!-- Progress Tracking -->
+<div class="progress-tracker">
+    <div class="progress-bar">
+        <div class="progress-fill" id="progress-fill"></div>
+    </div>
+    <span class="progress-text">0% Complete</span>
+</div>
+
+<!-- Floating Action Buttons -->
+<div class="floating-actions">
+    <button class="fab-button" id="scroll-to-top" title="Scroll to top">↑</button>
+    <button class="fab-button" id="toggle-toc" title="Toggle table of contents">📋</button>
+    <button class="fab-button" id="print-guide" title="Print guide">🖨️</button>
+</div>
+
+<script>
+// Progress tracking
+document.addEventListener('scroll', () => {
+    const scrollTop = document.documentElement.scrollTop;
+    const scrollHeight = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+    const progress = (scrollTop / scrollHeight) * 100;
+    
+    document.getElementById('progress-fill').style.width = `${progress}%`;
+    document.querySelector('.progress-text').textContent = `${Math.round(progress)}% Complete`;
+});
+
+// Scroll to top
+document.getElementById('scroll-to-top').addEventListener('click', () => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+});
+
+// Toggle TOC
+document.getElementById('toggle-toc').addEventListener('click', () => {
+    const toc = document.querySelector('.toc-sidebar');
+    if (toc) {
+        toc.style.display = toc.style.display === 'none' ? 'block' : 'none';
+    }
+});
+
+// Print guide
+document.getElementById('print-guide').addEventListener('click', () => {
+    window.print();
+});
+</script>
+{% endblock %}
