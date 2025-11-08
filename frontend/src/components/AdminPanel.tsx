@@ -35,7 +35,8 @@ import {
   ListItemIcon,
   Divider,
   IconButton,
-  Tooltip
+  Tooltip,
+  Snackbar,
 } from '@mui/material';
 import {
   Settings as SettingsIcon,
@@ -53,8 +54,10 @@ import {
   Error as ErrorIcon,
   Refresh as RefreshIcon,
   Download as DownloadIcon,
-  Upload as UploadIcon
+  Upload as UploadIcon,
+  CloudOff,
 } from '@mui/icons-material';
+import { authenticatedFetch, parseErrorResponse } from '../utils/api';
 
 interface TabPanelProps {
   children?: React.ReactNode;
@@ -124,10 +127,36 @@ const AdminPanel: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [selectedItem, setSelectedItem] = useState<any>(null);
+  const [isOnline, setIsOnline] = useState(navigator.onLine);
+  const [refreshing, setRefreshing] = useState(false);
+  const [showError, setShowError] = useState(false);
+  const [success, setSuccess] = useState<string>('');
+  const [showSuccess, setShowSuccess] = useState(false);
+
+  useEffect(() => {
+    const handleOnline = () => {
+      setIsOnline(true);
+      loadData();
+    };
+    const handleOffline = () => setIsOnline(false);
+
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
+  }, []);
+
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    await loadData();
+    setRefreshing(false);
+  };
 
   // Mock data - replace with actual API calls
-  useEffect(() => {
-    const loadData = async () => {
+  const loadData = async () => {
       try {
         // Simulate API calls
         setUsers([
@@ -221,10 +250,12 @@ const AdminPanel: React.FC = () => {
         setLoading(false);
       } catch (err) {
         setError('Failed to load admin data');
+        setShowError(true);
         setLoading(false);
       }
     };
-
+  
+  useEffect(() => {
     loadData();
   }, []);
 
@@ -280,9 +311,34 @@ const AdminPanel: React.FC = () => {
 
   return (
     <Container maxWidth="xl" sx={{ mt: 4, mb: 4 }}>
-      <Typography variant="h4" gutterBottom>
-        QFLARE Admin Panel
-      </Typography>
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+        <Typography variant="h4" sx={{ fontWeight: 600, color: '#000', fontFamily: 'Montserrat, sans-serif' }}>
+          ⚙️ QFLARE Admin Panel
+        </Typography>
+        <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
+          {!isOnline && (
+            <Chip 
+              icon={<CloudOff />} 
+              label="Offline" 
+              color="error" 
+              size="small" 
+              sx={{ fontFamily: 'Montserrat, sans-serif' }}
+            />
+          )}
+          <Tooltip title="Refresh data">
+            <IconButton 
+              onClick={handleRefresh} 
+              disabled={refreshing || !isOnline}
+              sx={{ 
+                border: '2px solid #000',
+                '&:hover': { backgroundColor: '#f5f5f5' }
+              }}
+            >
+              <RefreshIcon sx={{ color: '#000' }} />
+            </IconButton>
+          </Tooltip>
+        </Box>
+      </Box>
 
       <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 3 }}>
         <Tabs value={currentTab} onChange={handleTabChange} aria-label="admin tabs">
@@ -918,6 +974,30 @@ const AdminPanel: React.FC = () => {
           </Button>
         </DialogActions>
       </Dialog>
+
+      {/* Success Snackbar */}
+      <Snackbar
+        open={showSuccess}
+        autoHideDuration={4000}
+        onClose={() => setShowSuccess(false)}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+      >
+        <Alert onClose={() => setShowSuccess(false)} severity="success" sx={{ width: '100%' }}>
+          {success}
+        </Alert>
+      </Snackbar>
+
+      {/* Error Snackbar */}
+      <Snackbar
+        open={showError}
+        autoHideDuration={6000}
+        onClose={() => setShowError(false)}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+      >
+        <Alert onClose={() => setShowError(false)} severity="error" sx={{ width: '100%' }}>
+          {error}
+        </Alert>
+      </Snackbar>
     </Container>
   );
 };

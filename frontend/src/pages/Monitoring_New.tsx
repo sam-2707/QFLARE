@@ -21,7 +21,7 @@ import {
   Tooltip,
 } from '@mui/material';
 import {
-  Monitoring,
+  Monitor,
   Speed,
   Memory,
   Storage,

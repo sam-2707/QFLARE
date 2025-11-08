@@ -1,0 +1,423 @@
+name: QFLARE Production CI/CD
+
+on:
+  push:
+    branches:
+      - main
+      - develop
+    tags:
+      - 'v*'
+  pull_request:
+    branches:
+      - main
+      - develop
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_PREFIX: qflare
+  
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ['3.10', '3.11']
+        node-version: ['18', '20']
+        
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_PASSWORD: test_password
+          POSTGRES_USER: test_user
+          POSTGRES_DB: qflare_test
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+          
+      redis:
+        image: redis:7-alpine
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 6379:6379
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ matrix.python-version }}
+        
+    - name: Set up Node.js ${{ matrix.node-version }}
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ matrix.node-version }}
+        cache: 'npm'
+        cache-dependency-path: frontend/package-lock.json
+        
+    - name: Cache Python dependencies
+      uses: actions/cache@v3
+      with:
+        path: ~/.cache/pip
+        key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements*.txt') }}
+        restore-keys: |
+          ${{ runner.os }}-pip-
+          
+    - name: Install Python dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        pip install -r requirements.secure.txt
+        pip install pytest pytest-asyncio pytest-cov
+        
+    - name: Install frontend dependencies
+      run: |
+        cd frontend
+        npm ci
+        
+    - name: Lint Python code
+      run: |
+        pip install flake8 black isort mypy
+        flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
+        black --check --diff .
+        isort --check-only --diff .
+        mypy . --ignore-missing-imports
+        
+    - name: Lint frontend code
+      run: |
+        cd frontend
+        npm run lint
+        npm run type-check
+        
+    - name: Test Python backend
+      env:
+        DATABASE_URL: postgresql://test_user:test_password@localhost:5432/qflare_test
+        REDIS_URL: redis://localhost:6379/0
+        SECRET_KEY: test_secret_key
+        JWT_SECRET_KEY: test_jwt_key
+        ENCRYPTION_KEY: test_encryption_key
+        ENVIRONMENT: test
+      run: |
+        pytest tests/ --cov=. --cov-report=xml --cov-report=html
+        
+    - name: Test frontend
+      run: |
+        cd frontend
+        npm test -- --coverage --watchAll=false
+        
+    - name: Security scan
+      uses: github/super-linter@v5
+      env:
+        DEFAULT_BRANCH: main
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        VALIDATE_ALL_CODEBASE: false
+        VALIDATE_PYTHON_BANDIT: true
+        VALIDATE_DOCKERFILE_HADOLINT: true
+        VALIDATE_KUBERNETES_KUBECONFORM: true
+        
+    - name: Upload coverage reports
+      uses: codecov/codecov-action@v3
+      with:
+        files: ./coverage.xml,./frontend/coverage/lcov.info
+        fail_ci_if_error: true
+
+  build:
+    needs: test
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/'))
+    
+    outputs:
+      image-tag: ${{ steps.meta.outputs.tags }}
+      image-digest: ${{ steps.build.outputs.digest }}
+      
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+      
+    - name: Log in to Container Registry
+      uses: docker/login-action@v3
+      with:
+        registry: ${{ env.REGISTRY }}
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+        
+    - name: Extract metadata
+      id: meta
+      uses: docker/metadata-action@v5
+      with:
+        images: ${{ env.REGISTRY }}/${{ github.repository }}/${{ env.IMAGE_PREFIX }}
+        tags: |
+          type=ref,event=branch
+          type=ref,event=pr
+          type=semver,pattern={{version}}
+          type=semver,pattern={{major}}.{{minor}}
+          type=raw,value=latest,enable={{is_default_branch}}
+          
+    - name: Build and push backend image
+      id: build
+      uses: docker/build-push-action@v5
+      with:
+        context: .
+        file: build/Dockerfile.prod
+        target: backend
+        push: true
+        tags: ${{ steps.meta.outputs.tags }}-backend
+        labels: ${{ steps.meta.outputs.labels }}
+        cache-from: type=gha
+        cache-to: type=gha,mode=max
+        platforms: linux/amd64,linux/arm64
+        
+    - name: Build and push frontend image
+      uses: docker/build-push-action@v5
+      with:
+        context: .
+        file: build/Dockerfile.prod
+        target: frontend
+        push: true
+        tags: ${{ steps.meta.outputs.tags }}-frontend
+        labels: ${{ steps.meta.outputs.labels }}
+        cache-from: type=gha
+        cache-to: type=gha,mode=max
+        platforms: linux/amd64,linux/arm64
+        
+    - name: Generate SBOM
+      uses: anchore/sbom-action@v0
+      with:
+        image: ${{ steps.meta.outputs.tags }}-backend
+        format: spdx-json
+        output-file: sbom-backend.spdx.json
+        
+    - name: Scan for vulnerabilities
+      uses: anchore/scan-action@v3
+      with:
+        image: ${{ steps.meta.outputs.tags }}-backend
+        fail-build: true
+        severity-cutoff: high
+        
+    - name: Upload SBOM
+      uses: actions/upload-artifact@v3
+      with:
+        name: sbom
+        path: sbom-backend.spdx.json
+
+  deploy-staging:
+    needs: build
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/develop'
+    environment:
+      name: staging
+      url: https://qflare-staging.yourdomain.com
+      
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Configure kubectl
+      uses: azure/k8s-set-context@v3
+      with:
+        method: kubeconfig
+        kubeconfig: ${{ secrets.KUBE_CONFIG_STAGING }}
+        
+    - name: Deploy to staging
+      run: |
+        # Update image tags in Kubernetes manifests
+        sed -i "s|image: .*qflare.*backend.*|image: ${{ needs.build.outputs.image-tag }}-backend|g" k8s/staging/*.yaml
+        sed -i "s|image: .*qflare.*frontend.*|image: ${{ needs.build.outputs.image-tag }}-frontend|g" k8s/staging/*.yaml
+        
+        # Apply Kubernetes manifests
+        kubectl apply -f k8s/staging/
+        
+        # Wait for deployment to complete
+        kubectl rollout status deployment/qflare-backend -n qflare-staging --timeout=600s
+        kubectl rollout status deployment/qflare-frontend -n qflare-staging --timeout=600s
+        
+    - name: Run smoke tests
+      run: |
+        # Wait for services to be ready
+        sleep 30
+        
+        # Get service URL
+        STAGING_URL="https://qflare-staging.yourdomain.com"
+        
+        # Basic health check
+        curl -f $STAGING_URL/health || exit 1
+        curl -f $STAGING_URL/api/system/info || exit 1
+        
+        # Run integration tests
+        pytest tests/integration/ --base-url=$STAGING_URL
+
+  deploy-production:
+    needs: build
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/')
+    environment:
+      name: production
+      url: https://qflare.yourdomain.com
+      
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Configure kubectl
+      uses: azure/k8s-set-context@v3
+      with:
+        method: kubeconfig
+        kubeconfig: ${{ secrets.KUBE_CONFIG_PRODUCTION }}
+        
+    - name: Create database backup
+      run: |
+        kubectl exec -n qflare-prod deployment/postgres -- pg_dump -U qflare_user qflare > backup-$(date +%Y%m%d-%H%M%S).sql
+        
+    - name: Deploy to production
+      run: |
+        # Update image tags in Kubernetes manifests
+        sed -i "s|image: .*qflare.*backend.*|image: ${{ needs.build.outputs.image-tag }}-backend|g" k8s/production/*.yaml
+        sed -i "s|image: .*qflare.*frontend.*|image: ${{ needs.build.outputs.image-tag }}-frontend|g" k8s/production/*.yaml
+        
+        # Apply Kubernetes manifests with rolling update
+        kubectl apply -f k8s/production/
+        
+        # Wait for deployment to complete
+        kubectl rollout status deployment/qflare-backend -n qflare-prod --timeout=900s
+        kubectl rollout status deployment/qflare-frontend -n qflare-prod --timeout=900s
+        
+    - name: Run production smoke tests
+      run: |
+        # Wait for services to be ready
+        sleep 60
+        
+        # Get service URL
+        PRODUCTION_URL="https://qflare.yourdomain.com"
+        
+        # Comprehensive health checks
+        curl -f $PRODUCTION_URL/health || exit 1
+        curl -f $PRODUCTION_URL/api/system/info || exit 1
+        curl -f $PRODUCTION_URL/monitoring/health || exit 1
+        
+        # Check database connectivity
+        curl -f $PRODUCTION_URL/api/system/database/health || exit 1
+        
+        # Check federated learning endpoints
+        curl -f $PRODUCTION_URL/api/fl/status || exit 1
+        
+    - name: Notify deployment
+      uses: 8398a7/action-slack@v3
+      with:
+        status: ${{ job.status }}
+        channel: '#deployments'
+        webhook_url: ${{ secrets.SLACK_WEBHOOK }}
+        text: |
+          QFLARE Production Deployment ${{ job.status }}
+          Image: ${{ needs.build.outputs.image-tag }}
+          Commit: ${{ github.sha }}
+          Author: ${{ github.actor }}
+      if: always()
+
+  security-scan:
+    needs: build
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push'
+    
+    steps:
+    - name: Run Trivy vulnerability scanner
+      uses: aquasecurity/trivy-action@master
+      with:
+        image-ref: ${{ needs.build.outputs.image-tag }}-backend
+        format: 'sarif'
+        output: 'trivy-results.sarif'
+        
+    - name: Upload Trivy scan results to GitHub Security tab
+      uses: github/codeql-action/upload-sarif@v2
+      with:
+        sarif_file: 'trivy-results.sarif'
+        
+    - name: Run container security scan
+      uses: anchore/scan-action@v3
+      with:
+        image: ${{ needs.build.outputs.image-tag }}-backend
+        fail-build: false
+        acs-report-enable: true
+        
+    - name: Upload security scan results
+      uses: actions/upload-artifact@v3
+      with:
+        name: security-scan-results
+        path: anchore-reports/
+
+  performance-test:
+    needs: deploy-staging
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/develop' || github.ref == 'refs/heads/main'
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+        
+    - name: Install performance testing tools
+      run: |
+        pip install locust pytest-benchmark
+        
+    - name: Run load tests
+      run: |
+        cd tests/performance
+        locust -f locustfile.py --headless --users 100 --spawn-rate 10 \
+               --run-time 5m --host https://qflare-staging.yourdomain.com \
+               --html report.html --csv results
+               
+    - name: Upload performance results
+      uses: actions/upload-artifact@v3
+      with:
+        name: performance-results
+        path: tests/performance/
+
+  cleanup:
+    needs: [test, build, deploy-production]
+    runs-on: ubuntu-latest
+    if: always()
+    
+    steps:
+    - name: Clean up old images
+      run: |
+        # Keep only last 5 images
+        docker image prune -a --filter "until=168h" || true
+        
+    - name: Clean up old artifacts
+      uses: actions/github-script@v6
+      with:
+        script: |
+          const artifacts = await github.rest.actions.listArtifactsForRepo({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            per_page: 100
+          });
+          
+          // Delete artifacts older than 30 days
+          const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+          
+          for (const artifact of artifacts.data.artifacts) {
+            if (new Date(artifact.created_at) < thirtyDaysAgo) {
+              await github.rest.actions.deleteArtifact({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                artifact_id: artifact.id
+              });
+            }
+          }

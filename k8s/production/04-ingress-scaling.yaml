@@ -1,0 +1,194 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: qflare-ingress
+  namespace: qflare-prod
+  annotations:
+    kubernetes.io/ingress.class: "nginx"
+    nginx.ingress.kubernetes.io/use-regex: "true"
+    nginx.ingress.kubernetes.io/rewrite-target: /$1
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+    nginx.ingress.kubernetes.io/rate-limit: "100"
+    nginx.ingress.kubernetes.io/rate-limit-window: "1m"
+    nginx.ingress.kubernetes.io/limit-connections: "10"
+    nginx.ingress.kubernetes.io/proxy-body-size: "100m"
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "300"
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "300"
+spec:
+  tls:
+  - hosts:
+    - qflare.example.com
+    - api.qflare.example.com
+    - monitoring.qflare.example.com
+    secretName: qflare-tls
+  rules:
+  # Main application frontend
+  - host: qflare.example.com
+    http:
+      paths:
+      - path: /(.*)
+        pathType: Prefix
+        backend:
+          service:
+            name: qflare-frontend-service
+            port:
+              number: 80
+  # API endpoints
+  - host: api.qflare.example.com
+    http:
+      paths:
+      - path: /(.*)
+        pathType: Prefix
+        backend:
+          service:
+            name: qflare-backend-service
+            port:
+              number: 8000
+  # Monitoring endpoints
+  - host: monitoring.qflare.example.com
+    http:
+      paths:
+      - path: /grafana(.*)
+        pathType: Prefix
+        backend:
+          service:
+            name: grafana-service
+            port:
+              number: 3000
+      - path: /prometheus(.*)
+        pathType: Prefix
+        backend:
+          service:
+            name: prometheus-service
+            port:
+              number: 9090
+---
+# Network Policies for security
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: qflare-network-policy
+  namespace: qflare-prod
+spec:
+  podSelector: {}
+  policyTypes:
+  - Ingress
+  - Egress
+  ingress:
+  # Allow ingress from nginx ingress controller
+  - from:
+    - namespaceSelector:
+        matchLabels:
+          name: ingress-nginx
+  # Allow inter-pod communication within namespace
+  - from:
+    - podSelector: {}
+  egress:
+  # Allow egress to DNS
+  - to: []
+    ports:
+    - protocol: UDP
+      port: 53
+  # Allow egress to external services (SMTP, webhooks, etc.)
+  - to: []
+    ports:
+    - protocol: TCP
+      port: 443
+    - protocol: TCP
+      port: 587
+  # Allow inter-pod communication within namespace  
+  - to:
+    - podSelector: {}
+---
+# Horizontal Pod Autoscaler for backend
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: qflare-backend-hpa
+  namespace: qflare-prod
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: qflare-backend
+  minReplicas: 3
+  maxReplicas: 10
+  metrics:
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: 70
+  - type: Resource
+    resource:
+      name: memory
+      target:
+        type: Utilization
+        averageUtilization: 80
+  behavior:
+    scaleUp:
+      stabilizationWindowSeconds: 60
+      policies:
+      - type: Percent
+        value: 50
+        periodSeconds: 60
+    scaleDown:
+      stabilizationWindowSeconds: 300
+      policies:
+      - type: Percent
+        value: 10
+        periodSeconds: 60
+---
+# Horizontal Pod Autoscaler for frontend
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: qflare-frontend-hpa
+  namespace: qflare-prod
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: qflare-frontend
+  minReplicas: 2
+  maxReplicas: 5
+  metrics:
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: 70
+  - type: Resource
+    resource:
+      name: memory
+      target:
+        type: Utilization
+        averageUtilization: 80
+---
+# Pod Disruption Budget for backend
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: qflare-backend-pdb
+  namespace: qflare-prod
+spec:
+  minAvailable: 2
+  selector:
+    matchLabels:
+      app: qflare-backend
+---
+# Pod Disruption Budget for frontend
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: qflare-frontend-pdb
+  namespace: qflare-prod
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: qflare-frontend

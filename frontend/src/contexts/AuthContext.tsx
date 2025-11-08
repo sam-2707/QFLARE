@@ -5,7 +5,16 @@ export interface User {
   username: string;
   role: 'admin' | 'user';
   email: string;
-  name: string;
+  full_name?: string;
+  is_active: boolean;
+  is_verified: boolean;
+}
+
+interface RegisterData {
+  email: string;
+  username: string;
+  full_name?: string;
+  password: string;
 }
 
 interface AuthContextType {
@@ -13,26 +22,21 @@ interface AuthContextType {
   isAuthenticated: boolean;
   isAdmin: boolean;
   isUser: boolean;
-  login: (username: string, password: string) => Promise<boolean>;
-  logout: () => void;
+  login: (email: string, password: string) => Promise<boolean>;
+  register: (userData: RegisterData) => Promise<boolean>;
+  logout: () => Promise<void>;
   loading: boolean;
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
 
 // API configuration
-const API_BASE_URL = 'http://localhost:8000/api';
+const API_BASE_URL = 'http://localhost:8002/api';
 
 interface LoginResponse {
   access_token: string;
+  refresh_token: string;
   token_type: string;
-  user: {
-    username: string;
-    role: string;
-    last_login: string | null;
-    is_active: boolean;
-  };
-  expires_in: number;
 }
 
 interface AuthProviderProps {
@@ -50,13 +54,15 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     
     if (savedUser && savedToken) {
       try {
-        setUser(JSON.parse(savedUser));
+        const parsedUser = JSON.parse(savedUser);
+        setUser(parsedUser);
         // Optionally validate token with backend
         validateToken(savedToken);
       } catch (error) {
         console.error('Error parsing saved user:', error);
         localStorage.removeItem('qflare-user');
         localStorage.removeItem('qflare-token');
+        localStorage.removeItem('qflare-refresh-token');
       }
     }
     setLoading(false);
@@ -64,7 +70,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 
   const validateToken = async (token: string) => {
     try {
-      const response = await fetch(`${API_BASE_URL}/auth/validate-token`, {
+      const response = await fetch(`${API_BASE_URL}/auth/me`, {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -74,7 +80,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 
       if (!response.ok) {
         // Token is invalid, clear stored data
-        logout();
+        await logout();
       }
     } catch (error) {
       console.error('Token validation error:', error);
@@ -82,7 +88,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     }
   };
 
-  const login = async (username: string, password: string): Promise<boolean> => {
+  const login = async (email: string, password: string): Promise<boolean> => {
     setLoading(true);
     
     try {
@@ -92,7 +98,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          username: username.toLowerCase(),
+          email: email,
           password: password,
         }),
       });
@@ -100,21 +106,29 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       if (response.ok) {
         const data: LoginResponse = await response.json();
         
-        // Create User object from response
-        const user: User = {
-          id: `${data.user.role}-${Date.now()}`, // Generate ID
-          username: data.user.username,
-          role: data.user.role as 'admin' | 'user',
-          email: `${data.user.username}@qflare.com`,
-          name: data.user.role === 'admin' ? 'System Administrator' : 'Standard User'
-        };
-
-        setUser(user);
-        localStorage.setItem('qflare-user', JSON.stringify(user));
+        // Store tokens
         localStorage.setItem('qflare-token', data.access_token);
+        localStorage.setItem('qflare-refresh-token', data.refresh_token);
         
-        setLoading(false);
-        return true;
+        // Get user info from backend
+        const userResponse = await fetch(`${API_BASE_URL}/auth/me`, {
+          headers: {
+            'Authorization': `Bearer ${data.access_token}`,
+          },
+        });
+        
+        if (userResponse.ok) {
+          const userData = await userResponse.json();
+          setUser(userData);
+          localStorage.setItem('qflare-user', JSON.stringify(userData));
+          
+          setLoading(false);
+          return true;
+        } else {
+          console.error('Failed to get user data');
+          setLoading(false);
+          return false;
+        }
       } else {
         const errorData = await response.json();
         console.error('Login failed:', errorData);
@@ -128,7 +142,30 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     }
   };
 
-  const logout = async () => {
+  const register = async (userData: RegisterData): Promise<boolean> => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/auth/register`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(userData),
+      });
+
+      if (response.ok) {
+        return true;
+      } else {
+        const errorData = await response.json();
+        console.error('Registration failed:', errorData);
+        throw new Error(errorData.detail || 'Registration failed');
+      }
+    } catch (error) {
+      console.error('Registration error:', error);
+      throw error;
+    }
+  };
+
+  const logout = async (): Promise<void> => {
     const token = localStorage.getItem('qflare-token');
     
     // Call backend logout endpoint
@@ -151,6 +188,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     setUser(null);
     localStorage.removeItem('qflare-user');
     localStorage.removeItem('qflare-token');
+    localStorage.removeItem('qflare-refresh-token');
   };
 
   const value: AuthContextType = {
@@ -159,6 +197,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     isAdmin: user?.role === 'admin',
     isUser: user?.role === 'user',
     login,
+    register,
     logout,
     loading
   };

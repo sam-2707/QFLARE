@@ -27,7 +27,7 @@ import {
   Speed,
   Devices,
   CloudSync,
-  Privacy,
+  PrivacyTip,
   PlayArrow,
   Pause,
   Stop,
@@ -137,7 +137,7 @@ const FederatedLearning: React.FC = () => {
           <Card sx={{ background: 'linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)', color: 'white' }}>
             <CardContent>
               <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                <Privacy sx={{ mr: 1 }} />
+                <PrivacyTip sx={{ mr: 1 }} />
                 <Typography variant="h6">Privacy Budget</Typography>
               </Box>
               <Typography variant="h3" sx={{ fontWeight: 'bold' }}>{privacyBudget}</Typography>

@@ -1,0 +1,203 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: qflare-backend
+  namespace: qflare-prod
+  labels:
+    app: qflare-backend
+    component: api
+spec:
+  replicas: 3
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  selector:
+    matchLabels:
+      app: qflare-backend
+  template:
+    metadata:
+      labels:
+        app: qflare-backend
+        component: api
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "9090"
+        prometheus.io/path: "/metrics"
+    spec:
+      initContainers:
+      - name: db-migration
+        image: your-registry/qflare-backend:latest
+        command: ["python", "-m", "alembic", "upgrade", "head"]
+        envFrom:
+        - configMapRef:
+            name: qflare-config
+        - secretRef:
+            name: qflare-secrets
+        volumeMounts:
+        - name: app-data
+          mountPath: /app/data
+      containers:
+      - name: qflare-backend
+        image: your-registry/qflare-backend:latest
+        ports:
+        - containerPort: 8000
+          name: http
+          protocol: TCP
+        - containerPort: 9090
+          name: metrics
+          protocol: TCP
+        envFrom:
+        - configMapRef:
+            name: qflare-config
+        - secretRef:
+            name: qflare-secrets
+        env:
+        - name: QFLARE_VERSION
+          value: "1.0.0"
+        - name: DATABASE_URL
+          valueFrom:
+            secretKeyRef:
+              name: qflare-secrets
+              key: DATABASE_URL
+        - name: REDIS_URL
+          valueFrom:
+            secretKeyRef:
+              name: qflare-secrets
+              key: REDIS_URL
+        volumeMounts:
+        - name: app-data
+          mountPath: /app/data
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "250m"
+          limits:
+            memory: "2Gi"
+            cpu: "1000m"
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8000
+          initialDelaySeconds: 60
+          periodSeconds: 30
+          timeoutSeconds: 10
+          failureThreshold: 3
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 8000
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+        lifecycle:
+          preStop:
+            exec:
+              command: ["/bin/sh", "-c", "sleep 15"]
+      volumes:
+      - name: app-data
+        persistentVolumeClaim:
+          claimName: qflare-data-pvc
+      terminationGracePeriodSeconds: 60
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: qflare-backend-service
+  namespace: qflare-prod
+  labels:
+    app: qflare-backend
+    component: api
+spec:
+  type: ClusterIP
+  ports:
+  - port: 8000
+    targetPort: 8000
+    protocol: TCP
+    name: http
+  - port: 9090
+    targetPort: 9090
+    protocol: TCP
+    name: metrics
+  selector:
+    app: qflare-backend
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: qflare-frontend
+  namespace: qflare-prod
+  labels:
+    app: qflare-frontend
+    component: web
+spec:
+  replicas: 2
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  selector:
+    matchLabels:
+      app: qflare-frontend
+  template:
+    metadata:
+      labels:
+        app: qflare-frontend
+        component: web
+    spec:
+      containers:
+      - name: qflare-frontend
+        image: your-registry/qflare-frontend:latest
+        ports:
+        - containerPort: 80
+          name: http
+          protocol: TCP
+        env:
+        - name: REACT_APP_API_URL
+          value: "http://qflare-backend-service:8000"
+        - name: REACT_APP_WS_URL
+          value: "ws://qflare-backend-service:8000"
+        - name: REACT_APP_ENVIRONMENT
+          value: "production"
+        resources:
+          requests:
+            memory: "128Mi"
+            cpu: "100m"
+          limits:
+            memory: "256Mi"
+            cpu: "200m"
+        livenessProbe:
+          httpGet:
+            path: /
+            port: 80
+          initialDelaySeconds: 30
+          periodSeconds: 30
+          timeoutSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /
+            port: 80
+          initialDelaySeconds: 10
+          periodSeconds: 10
+          timeoutSeconds: 5
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: qflare-frontend-service
+  namespace: qflare-prod
+  labels:
+    app: qflare-frontend
+    component: web
+spec:
+  type: ClusterIP
+  ports:
+  - port: 80
+    targetPort: 80
+    protocol: TCP
+    name: http
+  selector:
+    app: qflare-frontend

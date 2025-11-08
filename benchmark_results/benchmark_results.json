@@ -1,0 +1,270 @@
+{
+  "crypto_keygen": {
+    "kyber_keygen": {
+      "avg_time": 0.0023158310004509986,
+      "min_time": 0.0015986999787855893,
+      "max_time": 0.00361509999493137,
+      "ops_per_second": 431.8104385878132
+    },
+    "dilithium_keygen": {
+      "avg_time": 0.00227735099993879,
+      "min_time": 0.0015259000065270811,
+      "max_time": 0.0034251000033691525,
+      "ops_per_second": 439.106663850622
+    }
+  },
+  "crypto_encryption": {
+    "encrypt_1024b": {
+      "avg_time": 0.0008906509997905231,
+      "throughput_mbps": 1.0964592194133087
+    },
+    "decrypt_1024b": {
+      "avg_time": 0.0008955630011041649,
+      "throughput_mbps": 1.0904453386260582
+    },
+    "encrypt_4096b": {
+      "avg_time": 0.0008876259994576685,
+      "throughput_mbps": 4.4007836660786
+    },
+    "decrypt_4096b": {
+      "avg_time": 0.0009503830011817627,
+      "throughput_mbps": 4.1101850465998835
+    },
+    "encrypt_16384b": {
+      "avg_time": 0.0010290639993036166,
+      "throughput_mbps": 15.183700926836114
+    },
+    "decrypt_16384b": {
+      "avg_time": 0.0009363379993010312,
+      "throughput_mbps": 16.687350093303845
+    },
+    "encrypt_65536b": {
+      "avg_time": 0.0009728190008900129,
+      "throughput_mbps": 64.24627802584035
+    },
+    "decrypt_65536b": {
+      "avg_time": 0.0008549870000570081,
+      "throughput_mbps": 73.10052666980044
+    }
+  },
+  "crypto_signatures": {
+    "signature_generation": {
+      "avg_time": 0.0011617179977474734,
+      "ops_per_second": 860.7941014419692
+    },
+    "signature_verification": {
+      "avg_time": 1.0653998178895564e-05,
+      "ops_per_second": 93861.47652821019
+    }
+  },
+  "privacy_noise": {
+    "gaussian_noise_1000": {
+      "avg_time": 5.9883399691898376e-05,
+      "params_per_second": 16699118.706436602
+    },
+    "laplace_noise_1000": {
+      "avg_time": 9.315490012522786e-05,
+      "params_per_second": 10734808.353137653
+    },
+    "gaussian_noise_10000": {
+      "avg_time": 0.00017250530011369848,
+      "params_per_second": 57969233.37085288
+    },
+    "laplace_noise_10000": {
+      "avg_time": 0.0005927623001043685,
+      "params_per_second": 16870168.697029628
+    },
+    "gaussian_noise_100000": {
+      "avg_time": 0.0015880970007565338,
+      "params_per_second": 62968445.852087274
+    },
+    "laplace_noise_100000": {
+      "avg_time": 0.005128995800594566,
+      "params_per_second": 19496993.931718122
+    },
+    "gaussian_noise_1000000": {
+      "avg_time": 0.01700096010044217,
+      "params_per_second": 58820207.452518605
+    },
+    "laplace_noise_1000000": {
+      "avg_time": 0.05548763550058357,
+      "params_per_second": 18022033.03453943
+    }
+  },
+  "privacy_clipping": {
+    "gradient_clipping_1000": {
+      "avg_time": 0.00022432780041708612,
+      "params_per_second": 22288811.242760133
+    },
+    "gradient_clipping_10000": {
+      "avg_time": 0.00029840480026905426,
+      "params_per_second": 167557626.26780102
+    },
+    "gradient_clipping_100000": {
+      "avg_time": 0.000986352401028853,
+      "params_per_second": 506918216.53037566
+    }
+  },
+  "byzantine_aggregation": {
+    "fedavg_10_clients": {
+      "avg_time": 0.002210598001838662,
+      "clients_per_second": 4523.66282412384
+    },
+    "krum_10_clients": {
+      "avg_time": 0.0064391599991358815,
+      "clients_per_second": 1552.9975961681296
+    },
+    "trimmed_mean_10_clients": {
+      "avg_time": 0.00402436799951829,
+      "clients_per_second": 2484.8622196570946
+    },
+    "coordinate_median_10_clients": {
+      "avg_time": 0.00408825800055638,
+      "clients_per_second": 2446.0295799920355
+    },
+    "fedavg_25_clients": {
+      "avg_time": 0.0017984260024968535,
+      "clients_per_second": 13901.044560794344
+    },
+    "krum_25_clients": {
+      "avg_time": 0.026823512001428754,
+      "clients_per_second": 932.0181488042422
+    },
+    "trimmed_mean_25_clients": {
+      "avg_time": 0.007797522001783364,
+      "clients_per_second": 3206.1467725621387
+    },
+    "coordinate_median_25_clients": {
+      "avg_time": 0.007152773997513577,
+      "clients_per_second": 3495.1474782637356
+    },
+    "fedavg_50_clients": {
+      "avg_time": 0.002775285999523476,
+      "clients_per_second": 18016.161220351754
+    },
+    "krum_50_clients": {
+      "avg_time": 0.10450654999818652,
+      "clients_per_second": 478.4389112535782
+    },
+    "trimmed_mean_50_clients": {
+      "avg_time": 0.023903605999075806,
+      "clients_per_second": 2091.7346111684224
+    },
+    "coordinate_median_50_clients": {
+      "avg_time": 0.011773812000174076,
+      "clients_per_second": 4246.712959172505
+    },
+    "fedavg_100_clients": {
+      "avg_time": 0.004742966000922024,
+      "clients_per_second": 21083.853432759202
+    },
+    "krum_100_clients": {
+      "avg_time": 0.43651723200047854,
+      "clients_per_second": 229.08603067447834
+    },
+    "trimmed_mean_100_clients": {
+      "avg_time": 0.050909310000715774,
+      "clients_per_second": 1964.277260850599
+    },
+    "coordinate_median_100_clients": {
+      "avg_time": 0.02019592999946326,
+      "clients_per_second": 4951.492701878927
+    }
+  },
+  "byzantine_detection": {
+    "statistical_outliers": {
+      "avg_detection_rate": 0.034,
+      "std_detection_rate": 0.08067893720848651,
+      "min_detection_rate": 0.0,
+      "max_detection_rate": 0.4
+    },
+    "sign_flippers": {
+      "avg_detection_rate": 0.0,
+      "std_detection_rate": 0.0,
+      "min_detection_rate": 0.0,
+      "max_detection_rate": 0.0
+    },
+    "combined_detection": {
+      "avg_detection_rate": 0.034,
+      "std_detection_rate": 0.08067893720848651,
+      "min_detection_rate": 0.0,
+      "max_detection_rate": 0.4
+    }
+  },
+  "fl_scenarios": {
+    "baseline": "PerformanceMetrics(training_time=112.4360350999923, communication_time=105.23579216003418, crypto_time=0.0, aggregation_time=0.0, peak_memory_mb=12791.48828125, avg_cpu_percent=78.83160127253447, network_bytes_sent=0, network_bytes_received=0, final_accuracy=0.102, convergence_round=0, loss_reduction=0.0, privacy_epsilon_used=0.0, byzantine_clients_detected=0, crypto_operations_per_second=0.0, throughput_ops_per_sec=1.778789156182311, latency_percentiles={})",
+    "pqc": "PerformanceMetrics(training_time=103.62140470001032, communication_time=103.03031826019287, crypto_time=0.0, aggregation_time=0.0, peak_memory_mb=12174.18359375, avg_cpu_percent=77.12477168949772, network_bytes_sent=0, network_bytes_received=0, final_accuracy=0.086, convergence_round=0, loss_reduction=0.0, privacy_epsilon_used=0.0, byzantine_clients_detected=0, crypto_operations_per_second=0.0, throughput_ops_per_sec=1.9301031536776696, latency_percentiles={})",
+    "dp": "PerformanceMetrics(training_time=120.65862210001796, communication_time=120.19937229156494, crypto_time=0.0, aggregation_time=0.0, peak_memory_mb=12219.0546875, avg_cpu_percent=75.49469026548672, network_bytes_sent=0, network_bytes_received=0, final_accuracy=0.107, convergence_round=0, loss_reduction=0.0, privacy_epsilon_used=0.0, byzantine_clients_detected=0, crypto_operations_per_second=0.0, throughput_ops_per_sec=1.657569069819257, latency_percentiles={})",
+    "byz": "PerformanceMetrics(training_time=96.17566280000028, communication_time=95.73729586601257, crypto_time=0.0, aggregation_time=0.0, peak_memory_mb=12214.140625, avg_cpu_percent=76.0453219927096, network_bytes_sent=0, network_bytes_received=0, final_accuracy=0.076, convergence_round=0, loss_reduction=0.0, privacy_epsilon_used=0.0, byzantine_clients_detected=20, crypto_operations_per_second=0.0, throughput_ops_per_sec=2.0795281693655188, latency_percentiles={})",
+    "pqc_dp_byz": "PerformanceMetrics(training_time=104.49103929998819, communication_time=103.98172545433044, crypto_time=0.0, aggregation_time=0.0, peak_memory_mb=12139.03125, avg_cpu_percent=75.67547380156076, network_bytes_sent=0, network_bytes_received=0, final_accuracy=0.106, convergence_round=0, loss_reduction=0.0, privacy_epsilon_used=0.0, byzantine_clients_detected=20, crypto_operations_per_second=0.0, throughput_ops_per_sec=1.914039723787326, latency_percentiles={})"
+  },
+  "scalability": {
+    "10_clients": "PerformanceMetrics(training_time=19.577921699994477, communication_time=19.31672191619873, crypto_time=0.0, aggregation_time=0.0, peak_memory_mb=11949.08984375, avg_cpu_percent=75.10350877192982, network_bytes_sent=0, network_bytes_received=0, final_accuracy=0.134, convergence_round=0, loss_reduction=0.0, privacy_epsilon_used=0.0, byzantine_clients_detected=9, crypto_operations_per_second=0.0, throughput_ops_per_sec=2.5538972300626837, latency_percentiles={})",
+    "25_clients": "PerformanceMetrics(training_time=47.756953899981454, communication_time=47.18024921417236, crypto_time=0.0, aggregation_time=0.0, peak_memory_mb=12199.0390625, avg_cpu_percent=74.48228155339805, network_bytes_sent=0, network_bytes_received=0, final_accuracy=0.115, convergence_round=0, loss_reduction=0.0, privacy_epsilon_used=0.0, byzantine_clients_detected=22, crypto_operations_per_second=0.0, throughput_ops_per_sec=2.6174198685659587, latency_percentiles={})",
+    "50_clients": "PerformanceMetrics(training_time=106.41188369999873, communication_time=105.3115861415863, crypto_time=0.0, aggregation_time=0.0, peak_memory_mb=12662.30859375, avg_cpu_percent=77.59934282584885, network_bytes_sent=0, network_bytes_received=0, final_accuracy=0.104, convergence_round=0, loss_reduction=0.0, privacy_epsilon_used=0.0, byzantine_clients_detected=49, crypto_operations_per_second=0.0, throughput_ops_per_sec=2.3493616625076528, latency_percentiles={})",
+    "100_clients": "PerformanceMetrics(training_time=217.8554962000053, communication_time=215.72607231140137, crypto_time=0.0, aggregation_time=0.0, peak_memory_mb=12854.84765625, avg_cpu_percent=75.92664879356569, network_bytes_sent=0, network_bytes_received=0, final_accuracy=0.106, convergence_round=0, loss_reduction=0.0, privacy_epsilon_used=0.0, byzantine_clients_detected=96, crypto_operations_per_second=0.0, throughput_ops_per_sec=2.2950993145519174, latency_percentiles={})"
+  },
+  "benchmark_metadata": {
+    "total_benchmark_time": 1062.9995021000213,
+    "config": {
+      "num_clients": 100,
+      "num_rounds": 50,
+      "data_size_per_client": 1000,
+      "model_size": "small",
+      "test_crypto_performance": true,
+      "test_privacy_overhead": true,
+      "test_byzantine_resilience": true,
+      "test_scalability": true,
+      "test_communication_overhead": true,
+      "test_memory_usage": true,
+      "security_configs": [
+        {
+          "pqc": false,
+          "dp": false,
+          "byzantine": false
+        },
+        {
+          "pqc": true,
+          "dp": false,
+          "byzantine": false
+        },
+        {
+          "pqc": false,
+          "dp": true,
+          "byzantine": false
+        },
+        {
+          "pqc": false,
+          "dp": false,
+          "byzantine": true
+        },
+        {
+          "pqc": true,
+          "dp": true,
+          "byzantine": true
+        }
+      ],
+      "client_scales": [
+        10,
+        25,
+        50,
+        100,
+        250,
+        500
+      ],
+      "model_sizes": [
+        "small",
+        "medium",
+        "large"
+      ],
+      "save_results": true,
+      "generate_plots": true,
+      "results_dir": "benchmark_results"
+    },
+    "system_info": {
+      "cpu_count": 8,
+      "memory_gb": 13.826961517333984,
+      "platform": "nt"
+    }
+  }
+}

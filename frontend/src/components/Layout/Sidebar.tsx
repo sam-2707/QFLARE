@@ -95,7 +95,7 @@ const Sidebar = ({ drawerWidth, mobileOpen, onDrawerToggle }: SidebarProps) => {
           </Avatar>
           <Box sx={{ flex: 1 }}>
             <Typography variant="subtitle2" sx={{ fontWeight: 'bold' }}>
-              {user?.name || 'User'}
+              {user?.username || user?.email || 'User'}
             </Typography>
             <Chip 
               label={isAdmin ? 'Administrator' : 'User'} 

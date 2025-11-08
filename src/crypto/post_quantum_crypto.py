@@ -220,13 +220,22 @@ class QFLARECrypto:
             metadata = json.loads(metadata_bytes.decode())
             security_level = metadata['security_level']
             
-            # For demonstration, we need to be consistent with encapsulation
-            # Use the private key seed to derive the same shared secret
+            # For demonstration, derive the corresponding public key from private key
+            # This ensures consistency with encapsulation
             private_key_seed = actual_private_key[:32]
             
-            # Create deterministic shared secret that matches encapsulation
-            # In real Kyber, this would involve lattice-based decryption
-            shared_secret = self._derive_key(private_key_seed + b"kyber_shared_secret", 32)
+            # Derive public key in same way as key generation
+            if security_level == 512:
+                pk_size = 800
+            elif security_level == 768:
+                pk_size = 1184
+            else:  # 1024
+                pk_size = 1568
+                
+            public_key = self._derive_key(private_key_seed + b"kyber_public", pk_size)
+            
+            # Now derive shared secret consistent with encapsulation
+            shared_secret = self._derive_key(public_key[:32] + b"kyber_shared_secret", 32)
             
             decaps_time = time.time() - start_time
             logger.debug(f"Kyber-{security_level} decapsulation completed in {decaps_time:.3f}s")
@@ -424,6 +433,12 @@ class QFLARECrypto:
         start_time = time.time()
         
         try:
+            # Validate required keys
+            required_keys = ['ciphertext', 'kyber_ciphertext', 'nonce', 'tag']
+            for key in required_keys:
+                if key not in encrypted_data:
+                    raise ValueError(f"Missing required key: {key}")
+            
             # Recover shared secret using Kyber
             shared_secret = self.kyber_decapsulate(encrypted_data['kyber_ciphertext'], private_key)
             
@@ -439,7 +454,7 @@ class QFLARECrypto:
             # Decrypt data with AES-256-GCM
             cipher = Cipher(
                 algorithms.AES(aes_key),
-                modes.GCM(encrypted_data['nonce'], encrypted_data.get('tag')),
+                modes.GCM(encrypted_data['nonce'], encrypted_data['tag']),
                 backend=self.backend
             )
             decryptor = cipher.decryptor()

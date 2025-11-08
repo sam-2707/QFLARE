@@ -1,0 +1,110 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: qflare-prod
+  labels:
+    app: qflare
+    environment: production
+---
+# ConfigMap for application configuration
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: qflare-config
+  namespace: qflare-prod
+data:
+  ENVIRONMENT: "production"
+  LOG_LEVEL: "INFO"
+  ENABLE_METRICS: "true"
+  ENABLE_HEALTH_CHECKS: "true"
+  ENABLE_ALERTING: "true"
+  PROMETHEUS_PORT: "9090"
+---
+# Secret for sensitive configuration
+apiVersion: v1
+kind: Secret
+metadata:
+  name: qflare-secrets
+  namespace: qflare-prod
+type: Opaque
+stringData:
+  DATABASE_URL: "postgresql://qflare_user:CHANGE_ME@postgres-service:5432/qflare"
+  REDIS_URL: "redis://:CHANGE_ME@redis-service:6379/0"
+  SECRET_KEY: "CHANGE_ME_RANDOM_SECRET_KEY"
+  JWT_SECRET_KEY: "CHANGE_ME_JWT_SECRET_KEY"
+  ENCRYPTION_KEY: "CHANGE_ME_ENCRYPTION_KEY"
+  POSTGRES_PASSWORD: "CHANGE_ME"
+  REDIS_PASSWORD: "CHANGE_ME"
+  GRAFANA_ADMIN_PASSWORD: "CHANGE_ME"
+  SMTP_SERVER: "smtp.example.com"
+  SMTP_PORT: "587"
+  SMTP_USERNAME: "alerts@example.com"
+  SMTP_PASSWORD: "CHANGE_ME"
+  ALERT_EMAIL_TO: "admin@example.com"
+  SLACK_WEBHOOK_URL: "https://hooks.slack.com/services/YOUR/SLACK/WEBHOOK"
+---
+# Persistent Volume Claims
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: postgres-pvc
+  namespace: qflare-prod
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 20Gi
+  storageClassName: fast-ssd
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: redis-pvc
+  namespace: qflare-prod
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 5Gi
+  storageClassName: fast-ssd
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: qflare-data-pvc
+  namespace: qflare-prod
+spec:
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 50Gi
+  storageClassName: shared-storage
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: prometheus-pvc
+  namespace: qflare-prod
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 10Gi
+  storageClassName: fast-ssd
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: grafana-pvc
+  namespace: qflare-prod
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 5Gi
+  storageClassName: fast-ssd

@@ -12,6 +12,7 @@ Features:
 - Performance monitoring and metrics
 - Security scanning and compliance
 - Client management and coordination
+- Comprehensive observability with logging, health checks, and alerting
 """
 
 import asyncio
@@ -22,21 +23,51 @@ import uuid
 from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Dict, List, Optional, Any
+import sys
 
 import uvicorn
-from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect, Depends, BackgroundTasks
+from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect, Depends, BackgroundTasks, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import HTMLResponse, JSONResponse
+from fastapi.responses import HTMLResponse, JSONResponse, Response
 from pydantic import BaseModel, Field
 from contextlib import asynccontextmanager
+import time
 
-# Configure logging
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-)
-logger = logging.getLogger(__name__)
+# Add project root to Python path to find monitoring module
+project_root = Path(__file__).parent.parent
+sys.path.insert(0, str(project_root))
+
+# Import monitoring system with fallback
+try:
+    from monitoring import (
+        initialize_monitoring, start_monitoring, shutdown_monitoring,
+        create_monitoring_app, qflare_metrics, get_logger, log_context,
+        monitor_operation, MonitoringContext
+    )
+    MONITORING_AVAILABLE = True
+    # Configure structured logging through monitoring system
+    logger = get_logger(__name__)
+except ImportError as e:
+    print(f"Warning: Monitoring module not available: {e}")
+    MONITORING_AVAILABLE = False
+    # Fallback logger
+    logging.basicConfig(level=logging.INFO)
+    logger = logging.getLogger(__name__)
+    
+    # Mock monitoring functions
+    def initialize_monitoring(): pass
+    def start_monitoring(): pass
+    def shutdown_monitoring(): pass
+    def create_monitoring_app(): return None
+    def monitor_operation(name): 
+        def decorator(func): return func
+        return decorator
+    class MonitoringContext:
+        def __enter__(self): return self
+        def __exit__(self, *args): pass
+    def log_context(**kwargs): return MonitoringContext()
+    qflare_metrics = None
 
 # Authentication Models
 class LoginRequest(BaseModel):
@@ -166,18 +197,56 @@ async def lifespan(app: FastAPI):
     # Startup
     logger.info("🚀 Starting QFLARE Professional Backend Server...")
     
-    # Initialize mock data
-    await initialize_mock_data()
+    with log_context(component="backend", operation="startup"):
+        try:
+            # Initialize monitoring system if available
+            if MONITORING_AVAILABLE:
+                await initialize_monitoring({
+                    "redis_url": os.getenv("REDIS_URL", "redis://localhost:6379"),
+                    "enable_metrics": True,
+                    "enable_health_checks": True,
+                    "enable_alerting": True,
+                    "alert_config": {
+                        "file_path": "data/logs/alerts.log"
+                    }
+                })
+                
+                # Start monitoring background tasks
+                await start_monitoring()
+                logger.info("✅ Monitoring system initialized")
+            else:
+                logger.info("⚠️  Running without monitoring system")
+            
+            # Initialize mock data
+            await initialize_mock_data()
+            
+            # Start background tasks
+            asyncio.create_task(metrics_update_task())
+            asyncio.create_task(training_simulation_task())
+            
+            logger.info("✅ QFLARE Backend Server started successfully")
+            
+        except Exception as e:
+            logger.error(f"Failed to start QFLARE Backend Server: {str(e)}")
+            raise
     
-    # Start background tasks
-    asyncio.create_task(metrics_update_task())
-    asyncio.create_task(training_simulation_task())
-    
-    logger.info("✅ QFLARE Backend Server started successfully")
     yield
     
     # Shutdown
-    logger.info("🛑 Shutting down QFLARE Backend Server...")
+    with log_context(component="backend", operation="shutdown"):
+        logger.info("🛑 Shutting down QFLARE Backend Server...")
+        
+        try:
+            # Shutdown monitoring system if available
+            if MONITORING_AVAILABLE:
+                await shutdown_monitoring()
+                logger.info("✅ Monitoring system shutdown completed")
+            else:
+                logger.info("✅ Shutdown completed (no monitoring to stop)")
+        except Exception as e:
+            logger.error(f"Error during shutdown: {str(e)}")
+            
+        logger.info("✅ QFLARE Backend Server shutdown completed")
 
 # Create FastAPI application
 app = FastAPI(
@@ -198,34 +267,112 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Health check endpoint
+# Request tracking middleware
+@app.middleware("http")
+async def request_tracking_middleware(request: Request, call_next):
+    """Track HTTP requests with monitoring."""
+    start_time = time.time()
+    correlation_id = str(uuid.uuid4())
+    
+    # Set correlation context
+    with log_context(
+        correlation_id=correlation_id,
+        request_id=correlation_id,
+        component="http_api",
+        operation=f"{request.method} {request.url.path}"
+    ):
+        logger.info(f"Request started: {request.method} {request.url.path}")
+        
+        # Track request metrics
+        qflare_metrics.http_requests_total.labels(
+            method=request.method,
+            endpoint=request.url.path
+        ).inc()
+        
+        try:
+            response = await call_next(request)
+            duration = time.time() - start_time
+            
+            # Track response metrics
+            qflare_metrics.http_request_duration.labels(
+                method=request.method,
+                endpoint=request.url.path,
+                status_code=response.status_code
+            ).observe(duration)
+            
+            qflare_metrics.http_responses_total.labels(
+                method=request.method,
+                endpoint=request.url.path,
+                status_code=response.status_code
+            ).inc()
+            
+            logger.info(
+                f"Request completed: {request.method} {request.url.path} - {response.status_code}",
+                duration=duration
+            )
+            
+            # Add correlation ID to response headers
+            response.headers["X-Correlation-ID"] = correlation_id
+            
+            return response
+            
+        except Exception as e:
+            duration = time.time() - start_time
+            
+            qflare_metrics.http_request_duration.labels(
+                method=request.method,
+                endpoint=request.url.path,
+                status_code=500
+            ).observe(duration)
+            
+            qflare_metrics.http_responses_total.labels(
+                method=request.method,
+                endpoint=request.url.path,
+                status_code=500
+            ).inc()
+            
+            logger.error(
+                f"Request failed: {request.method} {request.url.path} - {str(e)}",
+                duration=duration
+            )
+            raise
+
+# Mount monitoring API endpoints
+monitoring_app = create_monitoring_app()
+app.mount("/monitoring", monitoring_app)
+
+# Health check endpoint (basic compatibility)
 @app.get("/health")
 async def health_check():
-    """Health check endpoint for monitoring"""
+    """Basic health check endpoint for compatibility"""
     return {
-        "status": "healthy",
+        "status": "healthy", 
         "timestamp": datetime.now().isoformat(),
         "version": "1.0.0",
         "active_clients": len(qflare_state.clients),
-        "training_active": qflare_state.training_active
+        "training_active": qflare_state.training_active,
+        "monitoring_enabled": True,
+        "detailed_health": "/monitoring/health"
     }
 
 # Authentication Endpoints
 @app.post("/api/auth/login", response_model=LoginResponse)
+@monitor_operation("user_login", "auth")
 async def login(credentials: LoginRequest):
     """Authenticate user and return access token"""
-    # Demo users (in production, this would check against a database)
-    valid_users = {
-        "admin": {
-            "password": "admin123",
-            "role": "admin",
-            "name": "System Administrator",
-            "email": "admin@qflare.com"
-        },
-        "user": {
-            "password": "user123", 
-            "role": "user",
-            "name": "Standard User",
+    async with MonitoringContext("authenticate_user", "auth"):
+        # Demo users (in production, this would check against a database)
+        valid_users = {
+            "admin": {
+                "password": "admin123",
+                "role": "admin",
+                "name": "System Administrator",
+                "email": "admin@qflare.com"
+            },
+            "user": {
+                "password": "user123", 
+                "role": "user",
+                "name": "Standard User",
             "email": "user@qflare.com"
         }
     }
@@ -267,52 +414,61 @@ async def validate_token():
 
 # System information
 @app.get("/api/system/info")
+@monitor_operation("get_system_info", "system")
 async def get_system_info():
     """Get system information and current status"""
-    return {
-        "system_name": "QFLARE",
-        "version": "1.0.0",
-        "description": "Quantum-Resistant Federated Learning Framework",
-        "status": "operational",
-        "uptime": "2h 15m",
-        "active_clients": len(qflare_state.clients),
-        "current_round": qflare_state.system_metrics.current_round,
-        "total_rounds": qflare_state.system_metrics.total_rounds,
-        "training_active": qflare_state.training_active
-    }
+    async with MonitoringContext("retrieve_system_info", "system"):
+        return {
+            "system_name": "QFLARE",
+            "version": "1.0.0",
+            "description": "Quantum-Resistant Federated Learning Framework",
+            "status": "operational",
+            "uptime": "2h 15m",
+            "active_clients": len(qflare_state.clients),
+            "current_round": qflare_state.system_metrics.current_round,
+            "total_rounds": qflare_state.system_metrics.total_rounds,
+            "training_active": qflare_state.training_active
+        }
 
 # Metrics endpoints
 @app.get("/api/metrics")
+@monitor_operation("get_metrics", "metrics")
 async def get_metrics():
     """Get current system metrics"""
-    return qflare_state.system_metrics.dict()
+    async with MonitoringContext("retrieve_current_metrics", "metrics"):
+        return qflare_state.system_metrics.dict()
 
 @app.get("/api/metrics/history")
+@monitor_operation("get_metrics_history", "metrics")
 async def get_metrics_history():
     """Get historical metrics data"""
-    # Generate mock historical data
-    history = []
-    now = datetime.now()
-    
-    for i in range(50):
-        timestamp = now - timedelta(minutes=i)
-        history.append({
-            "timestamp": timestamp.isoformat(),
-            "global_accuracy": min(0.95, 0.1 + (i * 0.017)),
-            "training_loss": max(0.1, 2.0 - (i * 0.038)),
-            "active_clients": min(10, 2 + (i // 5)),
-            "round_number": max(1, 50 - i)
-        })
-    
-    return {"history": reversed(history)}
+    async with MonitoringContext("retrieve_historical_metrics", "metrics"):
+        # Generate mock historical data
+        history = []
+        now = datetime.now()
+        
+        for i in range(50):
+            timestamp = now - timedelta(minutes=i)
+            history.append({
+                "timestamp": timestamp.isoformat(),
+                "global_accuracy": min(0.95, 0.1 + (i * 0.017)),
+                "training_loss": max(0.1, 2.0 - (i * 0.038)),
+                "active_clients": min(10, 2 + (i // 5)),
+                "round_number": max(1, 50 - i)
+            })
+        
+        return {"history": reversed(history)}
 
 # Client management endpoints
 @app.get("/api/clients")
+@monitor_operation("get_clients", "client_management")
 async def get_clients():
     """Get all connected clients"""
-    return {"clients": list(qflare_state.clients.values())}
+    async with MonitoringContext("retrieve_all_clients", "client_management"):
+        return {"clients": list(qflare_state.clients.values())}
 
 @app.get("/api/clients/{client_id}")
+@monitor_operation("get_client", "client_management")
 async def get_client(client_id: str):
     """Get specific client information"""
     if client_id not in qflare_state.clients:
@@ -504,74 +660,103 @@ async def root():
     }
 
 # Background tasks
+@monitor_operation("metrics_update_task", "background_tasks")
 async def metrics_update_task():
     """Background task to update system metrics"""
-    while True:
-        try:
-            # Update metrics
-            qflare_state.system_metrics.active_clients = len([c for c in qflare_state.clients.values() if c.status != "disconnected"])
-            qflare_state.system_metrics.timestamp = datetime.now()
-            
-            # Simulate realistic metrics
-            if qflare_state.training_active:
-                qflare_state.system_metrics.global_accuracy = min(0.95, qflare_state.system_metrics.global_accuracy + 0.001)
-                qflare_state.system_metrics.training_loss = max(0.1, qflare_state.system_metrics.training_loss - 0.002)
-            
-            # Broadcast metrics update
-            await manager.broadcast({
-                "type": "metrics_update",
-                "data": qflare_state.system_metrics.dict()
-            })
-            
-            await asyncio.sleep(5)  # Update every 5 seconds
-            
-        except Exception as e:
-            logger.error(f"Error in metrics update task: {e}")
-            await asyncio.sleep(10)
+    with log_context(component="background_tasks", operation="metrics_update"):
+        logger.info("Starting metrics update background task")
+        
+        while True:
+            try:
+                async with MonitoringContext("update_system_metrics", "metrics"):
+                    # Update metrics
+                    qflare_state.system_metrics.active_clients = len([c for c in qflare_state.clients.values() if c.status != "disconnected"])
+                    qflare_state.system_metrics.timestamp = datetime.now()
+                    
+                    # Update monitoring metrics
+                    qflare_metrics.federated_learning_clients_active.set(qflare_state.system_metrics.active_clients)
+                    qflare_metrics.federated_learning_current_round.set(qflare_state.system_metrics.current_round)
+                    
+                    # Simulate realistic metrics
+                    if qflare_state.training_active:
+                        qflare_state.system_metrics.global_accuracy = min(0.95, qflare_state.system_metrics.global_accuracy + 0.001)
+                        qflare_state.system_metrics.training_loss = max(0.1, qflare_state.system_metrics.training_loss - 0.002)
+                        
+                        # Update monitoring metrics
+                        qflare_metrics.federated_learning_accuracy.set(qflare_state.system_metrics.global_accuracy)
+                        qflare_metrics.federated_learning_loss.set(qflare_state.system_metrics.training_loss)
+                    
+                    # Broadcast metrics update
+                    await manager.broadcast({
+                        "type": "metrics_update",
+                        "data": qflare_state.system_metrics.dict()
+                    })
+                
+                await asyncio.sleep(5)  # Update every 5 seconds
+                
+            except Exception as e:
+                logger.error(f"Error in metrics update task: {e}")
+                await asyncio.sleep(10)
 
+@monitor_operation("training_simulation_task", "background_tasks")
 async def training_simulation_task():
     """Background task to simulate training rounds"""
-    while True:
-        try:
-            if qflare_state.training_active and qflare_state.system_metrics.current_round < qflare_state.system_metrics.total_rounds:
-                # Simulate training round progression
-                await asyncio.sleep(15)  # 15 seconds per round
+    with log_context(component="background_tasks", operation="training_simulation"):
+        logger.info("Starting training simulation background task")
+        
+        while True:
+            try:
+                if qflare_state.training_active and qflare_state.system_metrics.current_round < qflare_state.system_metrics.total_rounds:
+                    async with MonitoringContext("process_training_round", "federated_learning"):
+                        # Simulate training round progression
+                        await asyncio.sleep(15)  # 15 seconds per round
+                        
+                        qflare_state.system_metrics.current_round += 1
+                        
+                        # Update monitoring metrics
+                        qflare_metrics.federated_learning_rounds_completed.inc()
+                        
+                        # Create training round record
+                        round_record = TrainingRound(
+                            round_id=str(uuid.uuid4()),
+                            round_number=qflare_state.system_metrics.current_round,
+                            status="completed",
+                            participants=list(qflare_state.clients.keys()),
+                            start_time=datetime.now() - timedelta(seconds=15),
+                            end_time=datetime.now(),
+                            global_accuracy=qflare_state.system_metrics.global_accuracy
+                        )
+                        
+                        qflare_state.training_rounds.append(round_record)
+                        
+                        logger.info(f"Training round {qflare_state.system_metrics.current_round} completed", 
+                                  extra={"round_data": round_record.dict()})
+                        
+                        await manager.broadcast({
+                            "type": "training_round_completed",
+                            "data": round_record.dict()
+                        })
+                        
+                        # Check if training is complete
+                        if qflare_state.system_metrics.current_round >= qflare_state.system_metrics.total_rounds:
+                            qflare_state.training_active = False
+                            qflare_metrics.federated_learning_training_sessions.inc()
+                            
+                            logger.info("Federated learning training completed", 
+                                      extra={"final_accuracy": qflare_state.system_metrics.global_accuracy})
+                            
+                            await manager.broadcast({
+                                "type": "training_completed",
+                                "data": {
+                                    "message": "Federated learning training completed",
+                                    "final_accuracy": qflare_state.system_metrics.global_accuracy
+                                }
+                            })
                 
-                qflare_state.system_metrics.current_round += 1
+                await asyncio.sleep(1)
                 
-                # Create training round record
-                round_record = TrainingRound(
-                    round_id=str(uuid.uuid4()),
-                    round_number=qflare_state.system_metrics.current_round,
-                    status="completed",
-                    participants=list(qflare_state.clients.keys()),
-                    start_time=datetime.now() - timedelta(seconds=15),
-                    end_time=datetime.now(),
-                    global_accuracy=qflare_state.system_metrics.global_accuracy
-                )
-                
-                qflare_state.training_rounds.append(round_record)
-                
-                await manager.broadcast({
-                    "type": "training_round_completed",
-                    "data": round_record.dict()
-                })
-                
-                # Check if training is complete
-                if qflare_state.system_metrics.current_round >= qflare_state.system_metrics.total_rounds:
-                    qflare_state.training_active = False
-                    await manager.broadcast({
-                        "type": "training_completed",
-                        "data": {
-                            "message": "Federated learning training completed",
-                            "final_accuracy": qflare_state.system_metrics.global_accuracy
-                        }
-                    })
-            
-            await asyncio.sleep(1)
-            
-        except Exception as e:
-            logger.error(f"Error in training simulation task: {e}")
+            except Exception as e:
+                logger.error(f"Error in training simulation task: {e}")
             await asyncio.sleep(10)
 
 async def initialize_mock_data():
