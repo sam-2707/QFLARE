@@ -2,7 +2,7 @@
 # Builds a production-ready container with all components
 
 # Stage 1: Base dependencies and SGX support
-FROM ubuntu:22.04 AS base-deps
+FROM ubuntu:24.04 AS base-deps
 
 # Install system dependencies
 RUN apt-get update && apt-get install -y \
