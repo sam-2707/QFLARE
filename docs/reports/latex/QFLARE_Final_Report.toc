@@ -1,0 +1,109 @@
+\contentsline {section}{Abstract}{iv}{Doc-Start}%
+\contentsline {section}{List of Figures}{x}{Doc-Start}%
+\contentsline {section}{List of Tables}{xi}{Doc-Start}%
+\contentsline {section}{List of Abbreviations}{xii}{Doc-Start}%
+\contentsline {section}{\numberline {1}Introduction}{1}{section.1}%
+\contentsline {subsection}{\numberline {1.1}Background and Motivation}{1}{subsection.1.1}%
+\contentsline {subsection}{\numberline {1.2}Problem Statement}{1}{subsection.1.2}%
+\contentsline {subsection}{\numberline {1.3}Research Objectives}{2}{subsection.1.3}%
+\contentsline {subsection}{\numberline {1.4}Contributions}{3}{subsection.1.4}%
+\contentsline {subsection}{\numberline {1.5}Organization of the Report}{4}{subsection.1.5}%
+\contentsline {section}{\numberline {2}Literature Survey}{5}{section.2}%
+\contentsline {subsection}{\numberline {2.1}Overview}{5}{subsection.2.1}%
+\contentsline {subsection}{\numberline {2.2}Key Research Papers}{5}{subsection.2.2}%
+\contentsline {subsubsection}{\numberline {2.2.1}Foundational Federated Learning}{5}{subsubsection.2.2.1}%
+\contentsline {subsection}{\numberline {2.3}Literature Summary}{6}{subsection.2.3}%
+\contentsline {subsection}{\numberline {2.4}Research Gaps}{8}{subsection.2.4}%
+\contentsline {section}{\numberline {3}Theoretical Foundations and Mathematical Formulations}{9}{section.3}%
+\contentsline {subsection}{\numberline {3.1}Federated Learning Framework}{9}{subsection.3.1}%
+\contentsline {subsubsection}{\numberline {3.1.1}Problem Formulation}{9}{subsubsection.3.1.1}%
+\contentsline {subsubsection}{\numberline {3.1.2}Federated Averaging Algorithm}{9}{subsubsection.3.1.2}%
+\contentsline {subsection}{\numberline {3.2}Post-Quantum Cryptography}{10}{subsection.3.2}%
+\contentsline {subsubsection}{\numberline {3.2.1}Kyber Key Encapsulation Mechanism}{10}{subsubsection.3.2.1}%
+\contentsline {subsubsection}{\numberline {3.2.2}Dilithium Digital Signatures}{11}{subsubsection.3.2.2}%
+\contentsline {subsection}{\numberline {3.3}Differential Privacy}{11}{subsection.3.3}%
+\contentsline {subsubsection}{\numberline {3.3.1}Formal Definition}{12}{subsubsection.3.3.1}%
+\contentsline {subsubsection}{\numberline {3.3.2}Gaussian Mechanism}{12}{subsubsection.3.3.2}%
+\contentsline {subsubsection}{\numberline {3.3.3}Gradient Clipping and Noise Addition}{12}{subsubsection.3.3.3}%
+\contentsline {subsection}{\numberline {3.4}Byzantine Fault Tolerance}{13}{subsection.3.4}%
+\contentsline {subsubsection}{\numberline {3.4.1}Byzantine Threat Model}{13}{subsubsection.3.4.1}%
+\contentsline {subsubsection}{\numberline {3.4.2}Krum Aggregation}{13}{subsubsection.3.4.2}%
+\contentsline {subsubsection}{\numberline {3.4.3}Coordinate-Wise Median}{13}{subsubsection.3.4.3}%
+\contentsline {subsection}{\numberline {3.5}Security Analysis}{14}{subsection.3.5}%
+\contentsline {subsubsection}{\numberline {3.5.1}Threat Model}{14}{subsubsection.3.5.1}%
+\contentsline {subsubsection}{\numberline {3.5.2}Security Properties}{14}{subsubsection.3.5.2}%
+\contentsline {section}{\numberline {4}System Architecture and Implementation}{16}{section.4}%
+\contentsline {subsection}{\numberline {4.1}Overall System Design}{16}{subsection.4.1}%
+\contentsline {subsection}{\numberline {4.2}Server Architecture}{17}{subsection.4.2}%
+\contentsline {subsubsection}{\numberline {4.2.1}Cryptographic Module}{17}{subsubsection.4.2.1}%
+\contentsline {subsubsection}{\numberline {4.2.2}Privacy Module}{17}{subsubsection.4.2.2}%
+\contentsline {subsubsection}{\numberline {4.2.3}Aggregation Module}{17}{subsubsection.4.2.3}%
+\contentsline {subsubsection}{\numberline {4.2.4}Communication Module}{18}{subsubsection.4.2.4}%
+\contentsline {subsection}{\numberline {4.3}Client Architecture}{18}{subsection.4.3}%
+\contentsline {subsection}{\numberline {4.4}Monitoring Dashboard}{18}{subsection.4.4}%
+\contentsline {subsection}{\numberline {4.5}Database Schema}{19}{subsection.4.5}%
+\contentsline {subsection}{\numberline {4.6}API Endpoints}{19}{subsection.4.6}%
+\contentsline {section}{\numberline {5}Experimental Setup}{20}{section.5}%
+\contentsline {subsection}{\numberline {5.1}Dataset Description}{20}{subsection.5.1}%
+\contentsline {subsubsection}{\numberline {5.1.1}MNIST Dataset Overview}{20}{subsubsection.5.1.1}%
+\contentsline {subsubsection}{\numberline {5.1.2}Data Preprocessing Pipeline}{20}{subsubsection.5.1.2}%
+\contentsline {subsubsection}{\numberline {5.1.3}Non-IID Data Distribution}{21}{subsubsection.5.1.3}%
+\contentsline {subsection}{\numberline {5.2}Model Architecture}{21}{subsection.5.2}%
+\contentsline {subsubsection}{\numberline {5.2.1}Convolutional Neural Network Design}{21}{subsubsection.5.2.1}%
+\contentsline {subsection}{\numberline {5.3}Training Configuration}{22}{subsection.5.3}%
+\contentsline {subsubsection}{\numberline {5.3.1}Hyperparameters}{22}{subsubsection.5.3.1}%
+\contentsline {subsection}{\numberline {5.4}Hardware and Software Environment}{23}{subsection.5.4}%
+\contentsline {subsubsection}{\numberline {5.4.1}System Specifications}{23}{subsubsection.5.4.1}%
+\contentsline {subsubsection}{\numberline {5.4.2}Software Stack}{24}{subsubsection.5.4.2}%
+\contentsline {subsection}{\numberline {5.5}Evaluation Metrics}{25}{subsection.5.5}%
+\contentsline {section}{\numberline {6}Experimental Results}{26}{section.6}%
+\contentsline {subsection}{\numberline {6.1}Model Performance and Accuracy}{26}{subsection.6.1}%
+\contentsline {subsubsection}{\numberline {6.1.1}Accuracy Convergence}{26}{subsubsection.6.1.1}%
+\contentsline {subsubsection}{\numberline {6.1.2}Performance Under Different Security Configurations}{27}{subsubsection.6.1.2}%
+\contentsline {subsection}{\numberline {6.2}Post-Quantum Cryptographic Performance}{27}{subsection.6.2}%
+\contentsline {subsubsection}{\numberline {6.2.1}Key Generation Performance}{27}{subsubsection.6.2.1}%
+\contentsline {subsubsection}{\numberline {6.2.2}Cryptographic Operation Throughput}{28}{subsubsection.6.2.2}%
+\contentsline {subsection}{\numberline {6.3}Differential Privacy Mechanisms}{29}{subsection.6.3}%
+\contentsline {subsubsection}{\numberline {6.3.1}Gradient Clipping Performance}{30}{subsubsection.6.3.1}%
+\contentsline {subsubsection}{\numberline {6.3.2}Noise Addition Performance}{30}{subsubsection.6.3.2}%
+\contentsline {subsection}{\numberline {6.4}Byzantine Fault Tolerance Analysis}{31}{subsection.6.4}%
+\contentsline {subsubsection}{\numberline {6.4.1}Aggregation Algorithm Comparison}{31}{subsubsection.6.4.1}%
+\contentsline {subsubsection}{\numberline {6.4.2}Byzantine Detection Under Attack}{31}{subsubsection.6.4.2}%
+\contentsline {subsection}{\numberline {6.5}Scalability Analysis}{32}{subsection.6.5}%
+\contentsline {subsubsection}{\numberline {6.5.1}Client Scaling Performance}{32}{subsubsection.6.5.1}%
+\contentsline {subsubsection}{\numberline {6.5.2}Scalability Metrics}{33}{subsubsection.6.5.2}%
+\contentsline {subsection}{\numberline {6.6}Cryptographic Performance Deep Dive}{34}{subsection.6.6}%
+\contentsline {subsubsection}{\numberline {6.6.1}Key Generation and Exchange}{34}{subsubsection.6.6.1}%
+\contentsline {subsubsection}{\numberline {6.6.2}Security Level Validation}{35}{subsubsection.6.6.2}%
+\contentsline {subsection}{\numberline {6.7}Differential Privacy Impact Analysis}{35}{subsection.6.7}%
+\contentsline {subsubsection}{\numberline {6.7.1}Privacy-Utility Trade-off Curve}{35}{subsubsection.6.7.1}%
+\contentsline {subsubsection}{\numberline {6.7.2}Privacy Composition Analysis}{36}{subsubsection.6.7.2}%
+\contentsline {subsection}{\numberline {6.8}End-to-End System Performance}{36}{subsection.6.8}%
+\contentsline {subsubsection}{\numberline {6.8.1}Complete System Metrics}{36}{subsubsection.6.8.1}%
+\contentsline {subsubsection}{\numberline {6.8.2}Performance Comparison with Baseline}{37}{subsubsection.6.8.2}%
+\contentsline {section}{\numberline {7}Discussion and Analysis}{39}{section.7}%
+\contentsline {subsection}{\numberline {7.1}Achievement of Research Objectives}{39}{subsection.7.1}%
+\contentsline {subsubsection}{\numberline {7.1.1}Objective 1: Quantum-Resistant FL System}{39}{subsubsection.7.1.1}%
+\contentsline {subsubsection}{\numberline {7.1.2}Objective 2: Differential Privacy Integration}{39}{subsubsection.7.1.2}%
+\contentsline {subsubsection}{\numberline {7.1.3}Objective 3: Byzantine-Resilient Aggregation}{39}{subsubsection.7.1.3}%
+\contentsline {subsubsection}{\numberline {7.1.4}Objective 4: Minimize Performance Overhead}{40}{subsubsection.7.1.4}%
+\contentsline {subsubsection}{\numberline {7.1.5}Objective 5: Demonstrate Scalability}{40}{subsubsection.7.1.5}%
+\contentsline {subsubsection}{\numberline {7.1.6}Objective 6: Production-Ready Platform}{40}{subsubsection.7.1.6}%
+\contentsline {subsubsection}{\numberline {7.1.7}Overall Achievement Summary}{41}{subsubsection.7.1.7}%
+\contentsline {subsection}{\numberline {7.2}Trade-offs and Design Choices}{41}{subsection.7.2}%
+\contentsline {subsubsection}{\numberline {7.2.1}Security vs. Performance Trade-off}{41}{subsubsection.7.2.1}%
+\contentsline {subsubsection}{\numberline {7.2.2}Privacy vs. Utility Trade-off}{42}{subsubsection.7.2.2}%
+\contentsline {subsubsection}{\numberline {7.2.3}Byzantine Resilience vs. Computational Cost}{42}{subsubsection.7.2.3}%
+\contentsline {subsection}{\numberline {7.3}Practical Implications}{42}{subsection.7.3}%
+\contentsline {subsubsection}{\numberline {7.3.1}Deployment Scenarios}{43}{subsubsection.7.3.1}%
+\contentsline {subsubsection}{\numberline {7.3.2}Economic Considerations}{43}{subsubsection.7.3.2}%
+\contentsline {subsection}{\numberline {7.4}Limitations and Challenges}{43}{subsection.7.4}%
+\contentsline {subsubsection}{\numberline {7.4.1}Current Limitations}{44}{subsubsection.7.4.1}%
+\contentsline {subsubsection}{\numberline {7.4.2}Open Research Questions}{44}{subsubsection.7.4.2}%
+\contentsline {subsection}{\numberline {7.5}Comparison with Related Work}{45}{subsection.7.5}%
+\contentsline {section}{\numberline {8}Conclusion and Future Work}{46}{section.8}%
+\contentsline {subsection}{\numberline {8.1}Summary of Key Findings}{46}{subsection.8.1}%
+\contentsline {subsection}{\numberline {8.2}Impact and Significance}{47}{subsection.8.2}%
+\contentsline {subsection}{\numberline {8.3}Future Research Directions}{47}{subsection.8.3}%
+\contentsline {subsection}{\numberline {8.4}Closing Remarks}{48}{subsection.8.4}%
+\contentsline {section}{References}{50}{subsection.8.4}%

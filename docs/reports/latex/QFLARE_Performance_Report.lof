@@ -1,0 +1,11 @@
+\contentsline {figure}{\numberline {1}{\ignorespaces Model accuracy convergence over 10 federated learning rounds. The system achieves 91.38\% final accuracy on the MNIST test set.}}{9}{figure.caption.5}%
+\contentsline {figure}{\numberline {2}{\ignorespaces Post-quantum cryptography implementation architecture in QFLARE.}}{13}{figure.caption.9}%
+\contentsline {figure}{\numberline {3}{\ignorespaces Differential privacy implementation with gradient clipping and noise addition.}}{15}{figure.caption.10}%
+\contentsline {figure}{\numberline {4}{\ignorespaces Byzantine-resilient aggregation algorithms implemented in QFLARE.}}{16}{figure.caption.11}%
+\contentsline {figure}{\numberline {5}{\ignorespaces System scalability analysis showing training time, memory usage, and throughput across different client counts.}}{17}{figure.caption.15}%
+\contentsline {figure}{\numberline {6}{\ignorespaces Performance overhead comparison across different security configurations. Full QFLARE security stack adds only 7\% overhead.}}{19}{figure.caption.18}%
+\contentsline {figure}{\numberline {7}{\ignorespaces Multi-dimensional security and performance analysis of QFLARE compared to baseline federated learning systems.}}{20}{figure.caption.20}%
+\contentsline {figure}{\numberline {8}{\ignorespaces Comprehensive experimental results summary showing all key performance metrics.}}{25}{figure.caption.27}%
+\contentsline {figure}{\numberline {9}{\ignorespaces Detailed benchmark plots showing crypto performance, privacy overhead, Byzantine aggregation, and scalability results.}}{26}{figure.caption.28}%
+\contentsline {figure}{\numberline {10}{\ignorespaces QFLARE's key innovations in quantum-resistant federated learning.}}{26}{figure.caption.29}%
+\contentsline {figure}{\numberline {11}{\ignorespaces QFLARE system architecture showing the three-tier design with server, edge nodes, and secure enclaves.}}{28}{figure.caption.31}%

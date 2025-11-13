@@ -1,0 +1,116 @@
+\contentsline {section}{Abstract}{1}{Doc-Start}%
+\contentsline {section}{List of Abbreviations}{vi}{Doc-Start}%
+\contentsline {section}{\numberline {1}Introduction}{1}{section.1}%
+\contentsline {subsection}{\numberline {1.1}Background and Motivation}{1}{subsection.1.1}%
+\contentsline {subsection}{\numberline {1.2}Problem Statement}{1}{subsection.1.2}%
+\contentsline {subsection}{\numberline {1.3}Research Objectives}{1}{subsection.1.3}%
+\contentsline {subsection}{\numberline {1.4}Contributions}{2}{subsection.1.4}%
+\contentsline {subsection}{\numberline {1.5}Report Organization}{3}{subsection.1.5}%
+\contentsline {subsection}{\numberline {1.6}Experimental Setup}{3}{subsection.1.6}%
+\contentsline {section}{\numberline {2}Related Work and Literature Review}{4}{section.2}%
+\contentsline {subsection}{\numberline {2.1}Literature Survey}{5}{subsection.2.1}%
+\contentsline {subsection}{\numberline {2.2}Critical Gaps in Literature}{5}{subsection.2.2}%
+\contentsline {subsubsection}{\numberline {2.2.1}Gap 1: Lack of Quantum-Resistant FL Systems}{5}{subsubsection.2.2.1}%
+\contentsline {subsubsection}{\numberline {2.2.2}Gap 2: Incomplete Security Integration}{6}{subsubsection.2.2.2}%
+\contentsline {subsubsection}{\numberline {2.2.3}Gap 3: Performance-Security Trade-off Assumptions}{6}{subsubsection.2.2.3}%
+\contentsline {subsubsection}{\numberline {2.2.4}Gap 4: Byzantine Aggregation Scalability}{6}{subsubsection.2.2.4}%
+\contentsline {subsubsection}{\numberline {2.2.5}Gap 5: Privacy-Utility Trade-off Optimization}{7}{subsubsection.2.2.5}%
+\contentsline {subsubsection}{\numberline {2.2.6}Gap 6: Lack of Production-Ready Implementations}{7}{subsubsection.2.2.6}%
+\contentsline {subsubsection}{\numberline {2.2.7}Gap 7: Comprehensive Performance Benchmarking}{7}{subsubsection.2.2.7}%
+\contentsline {subsection}{\numberline {2.3}Research Contributions Summary}{7}{subsection.2.3}%
+\contentsline {section}{\numberline {3}Executive Summary}{8}{section.3}%
+\contentsline {subsection}{\numberline {3.1}Key Achievements}{8}{subsection.3.1}%
+\contentsline {section}{\numberline {4}Model Performance Results}{8}{section.4}%
+\contentsline {subsection}{\numberline {4.1}Training Accuracy Progression}{8}{subsection.4.1}%
+\contentsline {subsubsection}{\numberline {4.1.1}Round-by-Round Performance}{9}{subsubsection.4.1.1}%
+\contentsline {subsection}{\numberline {4.2}Dataset Description and Preprocessing}{10}{subsection.4.2}%
+\contentsline {subsubsection}{\numberline {4.2.1}MNIST Dataset Overview}{10}{subsubsection.4.2.1}%
+\contentsline {subsubsection}{\numberline {4.2.2}Data Preprocessing Pipeline}{10}{subsubsection.4.2.2}%
+\contentsline {subsubsection}{\numberline {4.2.3}Non-IID Data Distribution}{11}{subsubsection.4.2.3}%
+\contentsline {subsection}{\numberline {4.3}Training Configuration}{12}{subsection.4.3}%
+\contentsline {subsection}{\numberline {4.4}Performance Under Different Scenarios}{13}{subsection.4.4}%
+\contentsline {section}{\numberline {5}Post-Quantum Cryptography Performance}{13}{section.5}%
+\contentsline {subsection}{\numberline {5.1}Cryptographic Operations Benchmarking}{13}{subsection.5.1}%
+\contentsline {subsubsection}{\numberline {5.1.1}Cryptographic Operation Performance}{13}{subsubsection.5.1.1}%
+\contentsline {subsection}{\numberline {5.2}Real-World Crypto Overhead}{14}{subsection.5.2}%
+\contentsline {section}{\numberline {6}Differential Privacy Performance}{14}{section.6}%
+\contentsline {subsection}{\numberline {6.1}Privacy-Preserving Noise Mechanisms}{14}{subsection.6.1}%
+\contentsline {subsubsection}{\numberline {6.1.1}Privacy-Preserving Operation Performance}{15}{subsubsection.6.1.1}%
+\contentsline {section}{\numberline {7}Byzantine Fault Tolerance}{15}{section.7}%
+\contentsline {subsection}{\numberline {7.1}Aggregation Algorithm Comparison}{15}{subsection.7.1}%
+\contentsline {subsubsection}{\numberline {7.1.1}Performance Across Different Client Scales}{16}{subsubsection.7.1.1}%
+\contentsline {subsection}{\numberline {7.2}Byzantine Attack Detection}{17}{subsection.7.2}%
+\contentsline {subsection}{\numberline {7.3}Impact on Model Accuracy}{17}{subsection.7.3}%
+\contentsline {section}{\numberline {8}Scalability Analysis}{17}{section.8}%
+\contentsline {subsection}{\numberline {8.1}Multi-Client Performance}{17}{subsection.8.1}%
+\contentsline {subsubsection}{\numberline {8.1.1}Training Time and Resource Usage}{18}{subsubsection.8.1.1}%
+\contentsline {subsection}{\numberline {8.2}System Resource Utilization}{18}{subsection.8.2}%
+\contentsline {section}{\numberline {9}Security Configuration Comparison}{18}{section.9}%
+\contentsline {subsection}{\numberline {9.1}End-to-End Performance Analysis}{19}{subsection.9.1}%
+\contentsline {subsection}{\numberline {9.2}Critical Finding}{19}{subsection.9.2}%
+\contentsline {section}{\numberline {10}Comprehensive Performance Summary}{20}{section.10}%
+\contentsline {subsection}{\numberline {10.1}Production-Ready System Metrics}{20}{subsection.10.1}%
+\contentsline {subsection}{\numberline {10.2}Computational Metrics and System Parameters}{21}{subsection.10.2}%
+\contentsline {subsubsection}{\numberline {10.2.1}Hardware and System Specifications}{21}{subsubsection.10.2.1}%
+\contentsline {subsubsection}{\numberline {10.2.2}Software Stack and Dependencies}{22}{subsubsection.10.2.2}%
+\contentsline {subsubsection}{\numberline {10.2.3}Network and Communication Parameters}{23}{subsubsection.10.2.3}%
+\contentsline {subsubsection}{\numberline {10.2.4}Model Training Computational Metrics}{23}{subsubsection.10.2.4}%
+\contentsline {subsubsection}{\numberline {10.2.5}Cryptographic Operation Computational Costs}{24}{subsubsection.10.2.5}%
+\contentsline {subsubsection}{\numberline {10.2.6}Database and Storage Metrics}{24}{subsubsection.10.2.6}%
+\contentsline {section}{\numberline {11}Experimental Results Visualization}{25}{section.11}%
+\contentsline {section}{\numberline {12}Key Innovations and Contributions}{26}{section.12}%
+\contentsline {subsection}{\numberline {12.1}Novel Contributions}{27}{subsection.12.1}%
+\contentsline {section}{\numberline {13}Comparative Analysis}{27}{section.13}%
+\contentsline {subsection}{\numberline {13.1}QFLARE vs Traditional Federated Learning}{28}{subsection.13.1}%
+\contentsline {section}{\numberline {14}System Architecture}{28}{section.14}%
+\contentsline {subsection}{\numberline {14.1}Architecture Highlights}{29}{subsection.14.1}%
+\contentsline {section}{\numberline {15}Conclusions}{29}{section.15}%
+\contentsline {section}{\numberline {16}Discussion and Analysis}{29}{section.16}%
+\contentsline {subsection}{\numberline {16.1}Research Objectives Achievement Analysis}{29}{subsection.16.1}%
+\contentsline {subsubsection}{\numberline {16.1.1}Objective 1: Develop a Quantum-Resistant FL System}{29}{subsubsection.16.1.1}%
+\contentsline {subsubsection}{\numberline {16.1.2}Objective 2: Integrate Differential Privacy Mechanisms}{30}{subsubsection.16.1.2}%
+\contentsline {subsubsection}{\numberline {16.1.3}Objective 3: Implement Byzantine-Resilient Aggregation}{30}{subsubsection.16.1.3}%
+\contentsline {subsubsection}{\numberline {16.1.4}Objective 4: Minimize Performance Overhead}{31}{subsubsection.16.1.4}%
+\contentsline {subsubsection}{\numberline {16.1.5}Objective 5: Demonstrate Scalability}{31}{subsubsection.16.1.5}%
+\contentsline {subsubsection}{\numberline {16.1.6}Objective 6: Create Production-Ready Platform}{32}{subsubsection.16.1.6}%
+\contentsline {subsection}{\numberline {16.2}Overall Objectives Achievement Summary}{33}{subsection.16.2}%
+\contentsline {subsection}{\numberline {16.3}Summary of Achievements}{33}{subsection.16.3}%
+\contentsline {subsection}{\numberline {16.4}Impact and Significance}{33}{subsection.16.4}%
+\contentsline {subsection}{\numberline {16.5}Future Work}{34}{subsection.16.5}%
+\contentsline {section}{\numberline {17}References and Resources}{34}{section.17}%
+\contentsline {subsection}{\numberline {17.1}System Information}{34}{subsection.17.1}%
+\contentsline {subsection}{\numberline {17.2}Key Technologies}{34}{subsection.17.2}%
+\contentsline {section}{\numberline {18}Conclusions and Future Work}{35}{section.18}%
+\contentsline {subsection}{\numberline {18.1}Summary of Achievements}{35}{subsection.18.1}%
+\contentsline {subsubsection}{\numberline {18.1.1}Key Performance Achievements}{35}{subsubsection.18.1.1}%
+\contentsline {subsubsection}{\numberline {18.1.2}Validation of Research Objectives}{35}{subsubsection.18.1.2}%
+\contentsline {subsection}{\numberline {18.2}Impact and Significance}{36}{subsection.18.2}%
+\contentsline {subsubsection}{\numberline {18.2.1}Scientific Impact}{36}{subsubsection.18.2.1}%
+\contentsline {subsubsection}{\numberline {18.2.2}Practical Impact}{36}{subsubsection.18.2.2}%
+\contentsline {subsubsection}{\numberline {18.2.3}Security Impact}{36}{subsubsection.18.2.3}%
+\contentsline {subsection}{\numberline {18.3}Limitations and Constraints}{37}{subsection.18.3}%
+\contentsline {subsection}{\numberline {18.4}Future Research Directions}{37}{subsection.18.4}%
+\contentsline {subsubsection}{\numberline {18.4.1}Advanced Federated Learning Algorithms}{37}{subsubsection.18.4.1}%
+\contentsline {subsubsection}{\numberline {18.4.2}Enhanced Security Mechanisms}{38}{subsubsection.18.4.2}%
+\contentsline {subsubsection}{\numberline {18.4.3}Performance Optimization}{38}{subsubsection.18.4.3}%
+\contentsline {subsubsection}{\numberline {18.4.4}Large-Scale Deployment}{38}{subsubsection.18.4.4}%
+\contentsline {subsubsection}{\numberline {18.4.5}Additional Use Cases}{38}{subsubsection.18.4.5}%
+\contentsline {subsection}{\numberline {18.5}Recommendations for Practitioners}{39}{subsection.18.5}%
+\contentsline {subsection}{\numberline {18.6}Concluding Remarks}{39}{subsection.18.6}%
+\contentsline {section}{Acknowledgments}{39}{subsection.18.6}%
+\contentsline {section}{References}{40}{subsection.18.6}%
+\contentsline {section}{\numberline {A}System Architecture Details}{41}{appendix.A}%
+\contentsline {subsection}{\numberline {A.1}Three-Tier Architecture}{41}{subsection.A.1}%
+\contentsline {subsection}{\numberline {A.2}API Endpoints}{41}{subsection.A.2}%
+\contentsline {section}{\numberline {B}Benchmark Methodology}{41}{appendix.B}%
+\contentsline {subsection}{\numberline {B.1}Cryptographic Benchmarks}{41}{subsection.B.1}%
+\contentsline {subsection}{\numberline {B.2}Training Benchmarks}{41}{subsection.B.2}%
+\contentsline {subsection}{\numberline {B.3}Scalability Benchmarks}{42}{subsection.B.3}%
+\contentsline {section}{\numberline {C}Configuration Parameters}{42}{appendix.C}%
+\contentsline {subsection}{\numberline {C.1}Model Configuration}{42}{subsection.C.1}%
+\contentsline {subsection}{\numberline {C.2}Training Configuration}{42}{subsection.C.2}%
+\contentsline {section}{\numberline {D}Conclusions and Future Work}{42}{appendix.D}%
+\contentsline {subsection}{\numberline {D.1}Summary of Achievements}{42}{subsection.D.1}%
+\contentsline {subsection}{\numberline {D.2}Future Research Directions}{43}{subsection.D.2}%
+\contentsline {subsection}{\numberline {D.3}Impact and Significance}{43}{subsection.D.3}%
+\contentsline {section}{References}{44}{subsection.D.3}%

@@ -1,0 +1,23 @@
+\contentsline {table}{\numberline {1}{\ignorespaces Experimental System Configuration}}{3}{table.caption.2}%
+\contentsline {table}{\numberline {2}{\ignorespaces Comprehensive Literature Review Summary}}{5}{table.caption.3}%
+\contentsline {table}{\numberline {3}{\ignorespaces QFLARE Performance Highlights}}{8}{table.caption.4}%
+\contentsline {table}{\numberline {4}{\ignorespaces Detailed Accuracy Progression Over 10 Training Rounds}}{9}{table.caption.6}%
+\contentsline {table}{\numberline {5}{\ignorespaces Comprehensive Training Hyperparameters}}{12}{table.caption.7}%
+\contentsline {table}{\numberline {6}{\ignorespaces Model Accuracy Under Various Security Configurations}}{13}{table.caption.8}%
+\contentsline {table}{\numberline {7}{\ignorespaces Aggregation Algorithm Performance (Clients/Second)}}{16}{table.caption.12}%
+\contentsline {table}{\numberline {8}{\ignorespaces Aggregation Time (milliseconds)}}{16}{table.caption.13}%
+\contentsline {table}{\numberline {9}{\ignorespaces Byzantine Detection Rates}}{17}{table.caption.14}%
+\contentsline {table}{\numberline {10}{\ignorespaces Scalability Metrics Across Client Counts}}{18}{table.caption.16}%
+\contentsline {table}{\numberline {11}{\ignorespaces System Resource Analysis}}{18}{table.caption.17}%
+\contentsline {table}{\numberline {12}{\ignorespaces Security Configuration Impact on System Performance}}{19}{table.caption.19}%
+\contentsline {table}{\numberline {13}{\ignorespaces Detailed Hardware Configuration}}{21}{table.caption.21}%
+\contentsline {table}{\numberline {14}{\ignorespaces Complete Software Environment}}{22}{table.caption.22}%
+\contentsline {table}{\numberline {15}{\ignorespaces Network Configuration and Performance}}{23}{table.caption.23}%
+\contentsline {table}{\numberline {16}{\ignorespaces Detailed Training Computational Requirements}}{23}{table.caption.24}%
+\contentsline {table}{\numberline {17}{\ignorespaces Post-Quantum Cryptography Computational Breakdown}}{24}{table.caption.25}%
+\contentsline {table}{\numberline {18}{\ignorespaces Database Performance Characteristics}}{24}{table.caption.26}%
+\contentsline {table}{\numberline {19}{\ignorespaces QFLARE Advantages Over Traditional FL Systems}}{28}{table.caption.30}%
+\contentsline {table}{\numberline {20}{\ignorespaces Comprehensive Objectives Achievement Matrix}}{33}{table.caption.32}%
+\contentsline {table}{\numberline {21}{\ignorespaces Research Objectives Achievement Summary}}{35}{table.caption.33}%
+\contentsline {table}{\numberline {22}{\ignorespaces CNN Model Architecture Parameters}}{42}{table.caption.34}%
+\contentsline {table}{\numberline {23}{\ignorespaces Federated Learning Training Parameters}}{42}{table.caption.35}%
