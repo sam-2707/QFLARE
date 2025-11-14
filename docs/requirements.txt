@@ -84,6 +84,6 @@ click>=8.1.0
 
 # Version pinning for reproducibility
 certifi==2023.7.22
-charset-normalizer==3.3.0
+charset-normalizer==3.4.4
 idna==3.4
 urllib3==2.0.6
